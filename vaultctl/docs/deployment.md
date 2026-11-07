@@ -5,7 +5,7 @@ copy to a service root, and let systemd manage it.
 
 ## Source vs. service root
 
-- Source (this repo): `~/projects/kinko`
+- Source (this repo): `~/projects/vaultctl`
 - Service root (default): `~/.local/share/vaultctl`
 - Data lives in `$VAULTCTL_SERVICE_ROOT/data` and is **never** touched by
   `deploy.sh`.

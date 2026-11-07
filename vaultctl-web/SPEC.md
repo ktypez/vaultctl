@@ -1,6 +1,6 @@
 # vaultctl-web — Svelte Web UI for vaultctl (credentials vault, optional)
 
-You are working in `/home/admin/projects/kinko/vaultctl-web/`, a freshly scaffolded Svelte + Vite app.
+You are working in `/home/admin/projects/vaultctl/vaultctl-web/`, a freshly scaffolded Svelte + Vite app.
 Build a complete web UI that talks to the Vaultctl backend (credentials vault) HTTP API.
 
 ## Backend API (vaultctl, default base URL http://127.0.0.1:8787)
@@ -42,7 +42,7 @@ Base URL configurable via Vite env `VITE_VAULT_URL` (default http://127.0.0.1:87
 
 ## Design
 
-Port the visual style from the old template in /home/admin/projects/kinko/vaultctl/app.py (the TEMPLATE string). Extract the CSS variables and component styles and put them in src/app.css (global). Keep the washi/anime aesthetic: serif display font, mono for keys/values, the color palette (light + dark), card surfaces, grain overlay, fade-up animations.
+Port the visual style from the old template in /home/admin/projects/vaultctl/vaultctl/app.py (the TEMPLATE string). Extract the CSS variables and component styles and put them in src/app.css (global). Keep the washi/anime aesthetic: serif display font, mono for keys/values, the color palette (light + dark), card surfaces, grain overlay, fade-up animations.
 
 Key CSS variables (from the template):
 - Light: --bg #f4efe6, --bg2 #fbf8f2, --ink #1f1a14, --muted #6b6256, --line #d9d0c0, --accent #c8553d, --accent-soft rgba(200,85,61,.12), --ok #2f6b3a, --err #9b2c2c, --card #fffaf0
