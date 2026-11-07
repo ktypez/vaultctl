@@ -196,6 +196,11 @@
     const name = newName.trim();
     if (!name) { showToast('Name is required', 'err'); return; }
     if (newValue === '') { showToast('Value is required', 'err'); return; }
+    const csrf = getCsrf();
+    if (!csrf) {
+      showToast('Session expired — please unlock again', 'err');
+      return;
+    }
     const r = await api('/api/entries', 'POST', { name, value: newValue });
     if (r.ok) {
       addModalOpen = false;
