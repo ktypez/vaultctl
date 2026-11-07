@@ -1,0 +1,9 @@
+[Unit]
+Description=Create and push an encrypted vaultctl database backup
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+Environment=PATH=%h/.local/bin:%h/.bun/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=%h/.local/bin/vaultctl-db-backup

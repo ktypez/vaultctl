@@ -13,3 +13,5 @@ sessions.json
 # OpenTUI / Bun (installed by vaultctl/install-tui.sh — not committed)
 vaultctl/opentui/node_modules/
 vaultctl/opentui/__pycache__/
+
+# Agent skills are source documentation; do not ignore skills/SKILL.md

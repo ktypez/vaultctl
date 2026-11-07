@@ -43,3 +43,14 @@ Restore = drop the file back into `data/` and restart. Lose both the file
 
 `audit.jsonl` is plain JSONL (no secrets) and can be backed up or rotated
 freely.
+
+For offsite protection there is an optional weekly job that wraps
+`credentials.enc` in a second GPG AES-256 envelope and pushes it to a private
+GitHub repository:
+
+```bash
+./vaultctl/install-backup.sh          # install engine + weekly user timer
+./vaultctl/install-backup.sh --verify # check the installation
+```
+
+See [Backups](backup.md) for installation, operation, restore, and security.

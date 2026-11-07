@@ -1,0 +1,111 @@
+#!/usr/bin/env bash
+# vaultctl-db-backup — push a doubly-encrypted snapshot of the vault database
+# to a private GitHub repository.
+#
+#   ~/.local/share/vaultctl/data/credentials.enc   (already AES-256-GCM)
+#     └─ GPG AES-256 symmetric envelope ─▶ credentials-<UTC>.gpg
+#          └─ private repo (git push, newest N kept)
+#
+# The envelope passphrase is generated once, stored only on this host at
+# ~/.config/vaultctl-db-backup/encryption-passphrase (mode 0600), and is never
+# printed or uploaded. Install with `vaultctl/install-backup.sh`.
+#
+# Fail-closed by design: a run aborts unless the encrypted database exists with
+# mode 0600, the remote is verified private, and the snapshot decrypts back to
+# the exact source bytes.
+set -Eeuo pipefail
+umask 077
+
+BACKUP_REPO="${VAULTCTL_BACKUP_REPO:-ktypez/vaultctl-db-backup}"
+REMOTE="${VAULTCTL_BACKUP_REMOTE:-https://github.com/${BACKUP_REPO}.git}"
+SRC="${VAULTCTL_DATA_DIR:-$HOME/.local/share/vaultctl/data}/credentials.enc"
+CFG="${VAULTCTL_BACKUP_CONFIG_DIR:-$HOME/.config/vaultctl-db-backup}"
+STATE="${VAULTCTL_BACKUP_STATE_DIR:-$HOME/.local/state/vaultctl-db-backup}"
+REPO="${VAULTCTL_BACKUP_CLONE:-$HOME/.local/share/vaultctl-db-backup/repo}"
+PASSFILE="$CFG/encryption-passphrase"
+RETAIN="${VAULTCTL_BACKUP_RETAIN:-52}"
+
+for cmd in gh git gpg flock; do
+  command -v "$cmd" >/dev/null || { echo "vaultctl backup: required command not found: $cmd" >&2; exit 1; }
+done
+
+mkdir -p -m 700 "$CFG" "$STATE" "$(dirname "$REPO")"
+exec 9>"$STATE/backup.lock"
+flock -n 9 || { echo 'vaultctl backup already running' >&2; exit 1; }
+
+[[ -f "$SRC" ]] || { echo "vaultctl backup: missing encrypted database" >&2; exit 1; }
+[[ "$(stat -c '%a' "$SRC")" == 600 ]] || { echo "vaultctl backup: refusing database with unexpected permissions" >&2; exit 1; }
+
+# Check remote privacy every run; fail closed if visibility cannot be verified.
+private="$(gh repo view "$BACKUP_REPO" --json isPrivate -q '.isPrivate')"
+[[ "$private" == true ]] || { echo "vaultctl backup: GitHub repo is not verified private" >&2; exit 1; }
+
+# Create a separate high-entropy envelope-encryption passphrase. Never print it.
+if [[ ! -s "$PASSFILE" ]]; then
+  python3 - "$PASSFILE" <<'PY'
+import os, secrets, sys
+path = sys.argv[1]
+fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+with os.fdopen(fd, 'w') as f:
+    f.write(secrets.token_urlsafe(48) + '\n')
+PY
+fi
+[[ "$(stat -c '%a' "$PASSFILE")" == 600 ]] || { echo "vaultctl backup: encryption key permissions must be 0600" >&2; exit 1; }
+
+if [[ ! -d "$REPO/.git" ]]; then
+  [[ ! -e "$REPO" ]] || { echo "vaultctl backup: repo path exists but is not a git clone" >&2; exit 1; }
+  gh auth setup-git --hostname github.com >/dev/null
+  gh repo clone "$BACKUP_REPO" "$REPO" >/dev/null
+fi
+
+git -C "$REPO" remote set-url origin "$REMOTE"
+# Keep only envelope-encrypted snapshots and this documentation in the repo.
+cat > "$REPO/.gitignore" <<'EOF'
+*
+!/.gitignore
+!/README.md
+!/credentials-*.gpg
+EOF
+cat > "$REPO/README.md" <<'EOF'
+# vaultctl encrypted database backups
+
+Private repository. Weekly snapshots contain only `credentials.enc` wrapped
+again with GPG symmetric AES-256 encryption. The GPG passphrase is stored only
+on the lab host at `~/.config/vaultctl-db-backup/encryption-passphrase` (mode
+0600); it is not committed or uploaded. The vault database itself is already
+AES-256-GCM encrypted. Do not add vault session files, master-password files,
+plaintext exports, or credentials to this repository.
+
+Restore requires the local GPG passphrase and the vault master password. Verify
+a decrypted snapshot before replacing a live database; stop the service first.
+EOF
+
+# The live vault writes atomically; copy one complete version, then envelope-encrypt it.
+now="$(date -u +%Y%m%dT%H%M%SZ)"
+tmpdir="$(mktemp -d "$STATE/run.XXXXXX")"
+cleanup() { rm -rf -- "$tmpdir"; }
+trap cleanup EXIT
+cp -- "$SRC" "$tmpdir/credentials.enc"
+out="$REPO/credentials-$now.gpg"
+gpg --batch --yes --pinentry-mode loopback --passphrase-file "$PASSFILE" \
+  --symmetric --cipher-algo AES256 --output "$tmpdir/credentials-$now.gpg" "$tmpdir/credentials.enc"
+chmod 600 "$tmpdir/credentials-$now.gpg"
+# Verify envelope decryption byte-for-byte without displaying database contents.
+gpg --batch --quiet --pinentry-mode loopback --passphrase-file "$PASSFILE" \
+  --decrypt "$tmpdir/credentials-$now.gpg" 2>/dev/null | cmp -s - "$tmpdir/credentials.enc" || {
+    echo 'vaultctl backup: encrypted snapshot verification failed' >&2; exit 1;
+  }
+mv -- "$tmpdir/credentials-$now.gpg" "$out"
+
+# Retain the newest N snapshots; prune only inside this backup repo.
+mapfile -t snapshots < <(find "$REPO" -maxdepth 1 -type f -name 'credentials-*.gpg' -printf '%f\n' | sort -r)
+if (( ${#snapshots[@]} > RETAIN )); then
+  for old in "${snapshots[@]:RETAIN}"; do rm -f -- "$REPO/$old"; done
+fi
+
+git -C "$REPO" add -A -- .
+git -C "$REPO" diff --cached --quiet && { echo "vaultctl backup: no changes to push"; exit 0; }
+git -C "$REPO" -c user.name='vaultctl backup' -c user.email='vaultctl-backup@users.noreply.github.com' \
+  commit -m "Encrypted vault backup $now" >/dev/null
+git -C "$REPO" push -u origin HEAD:main >/dev/null
+printf 'vaultctl backup: verified encrypted snapshot pushed (%s; %d entries file; private repo)\n' "$now" "${#snapshots[@]}"

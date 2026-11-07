@@ -21,6 +21,7 @@ This is a monorepo with two components:
 
 - `vaultctl/` — **credentials vault backend** (Flask API, encrypted store, `vaultctl` CLI). Service: `vaultctl.service` on `:8787`.
 - `vaultctl-web/` — **web UI frontend (optional)** (Svelte + Vite SPA, served via `serve.py`). Service: `vaultweb.service` on `:8788` (proxies `/api/*` to vaultctl). Not required — CLI/TUI are the primary interface.
+- `skills/` — **reusable agent skills** for working with this repo (see `skills/vaultctl-backup`).
 
 The frontend talks to the backend through relative `/api/*` (proxied in dev by Vite, in prod by `serve.py`).
 
@@ -224,6 +225,83 @@ sudo systemctl stop vaultctl
 journalctl -u vaultctl -f
 ```
 
+## Encrypted offsite backups
+
+`credentials.enc` is already AES-256-GCM ciphertext, so it is safe to copy
+anywhere. For protection against losing the host, an optional weekly job wraps
+it in a **second** GPG AES-256 envelope and pushes it to a **private** GitHub
+repository (newest 52 kept):
+
+```
+credentials.enc                   AES-256-GCM   (vault master password)
+  └─ GPG symmetric envelope       AES-256       (host-only envelope passphrase)
+       └─ credentials-<UTC>.gpg   git push      (private repo)
+```
+
+Two independent keys are needed to read a snapshot — the envelope passphrase
+(on the host only) **and** the vault master password. Neither alone is enough.
+
+### Install
+
+One-liner (no checkout required — fetches the artifacts from the repository's
+default branch, `master`; override with `VAULTCTL_SRC_RAW_BASE`):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/ktypez/vaultctl/master/vaultctl/install-backup.sh | bash
+```
+
+From a checkout:
+
+```bash
+./vaultctl/install-backup.sh          # install engine + weekly user timer
+./vaultctl/install-backup.sh --dry-run    # show actions, change nothing
+./vaultctl/install-backup.sh --verify     # check an existing installation
+```
+
+Step by step:
+
+```bash
+gh auth status                        # 1. GitHub CLI installed + authenticated (repo scope)
+command -v gpg git flock python3      # 2. gpg + git + flock + python3 on PATH (nothing auto-installed)
+gh repo create ktypez/vaultctl-db-backup --private   # 3. private destination (once)
+./vaultctl/install-backup.sh          # 4. install artifacts + arm the timer
+./vaultctl/install-backup.sh --verify # 5. confirm
+```
+
+The installer writes the engine to `~/.local/bin`, user units to
+`~/.config/systemd/user`, generates the envelope passphrase once at
+`~/.config/vaultctl-db-backup/encryption-passphrase` (mode `0600`) **without
+ever printing it**, then `systemctl --user enable --now`s the timer (Sundays
+02:00, `Persistent=true`). Paths are `$HOME`-relative — nothing is hardcoded.
+
+### Operate
+
+```bash
+systemctl --user list-timers vaultctl-db-backup.timer   # next run
+systemctl --user start vaultctl-db-backup.service       # back up now
+journalctl --user -u vaultctl-db-backup.service -n 50   # last run
+```
+
+Each run fails closed: the database must exist at mode `0600`, the remote must
+verify as **private** via the GitHub API, and the new snapshot must decrypt
+back to the exact source bytes (`cmp`, nothing displayed). A `flock` guard
+prevents overlapping runs.
+
+### Restore
+
+```bash
+gpg --batch --pinentry-mode loopback \
+    --passphrase-file ~/.config/vaultctl-db-backup/encryption-passphrase \
+    --decrypt ~/.local/share/vaultctl-db-backup/repo/credentials-<UTC>.gpg > /tmp/restore.enc
+sudo systemctl stop vaultctl
+install -m 600 /tmp/restore.enc ~/.local/share/vaultctl/data/credentials.enc
+sudo systemctl start vaultctl
+rm -f /tmp/restore.enc
+```
+
+Full details — restore, security model, and gotchas — in
+[`vaultctl/docs/backup.md`](vaultctl/docs/backup.md).
+
 ## Security notes
 
 - **Plain HTTP.** The default deployment speaks cleartext. On a trusted LAN
@@ -233,7 +311,10 @@ journalctl -u vaultctl -f
   `0600`; keep them that way.
 - **Backups.** `credentials.enc` is fully encrypted — safe to copy into any
   backup system. Restore = drop the file back and restart. Lose both the file
-  *and* the password and there is no recovery path.
+  *and* the password and there is no recovery path. The optional offsite job
+  adds a second GPG layer, so a snapshot needs the host-only envelope
+  passphrase *and* the master password — see
+  [`vaultctl/docs/backup.md`](vaultctl/docs/backup.md).
 - **Sessions are in-memory.** A service restart logs everyone out by design.
 - **Audit log.** `data/audit.jsonl` records every access decision (allow/deny +
   reason) but never secret values. Inspect with `vaultctl audit` or
@@ -256,12 +337,19 @@ vaultctl/
 ├── run.sh / stop.sh    # manual launchers (mock by default)
 ├── deploy.sh           # source → service-root sync (+ installs vaultctl)
 ├── install.sh          # installs the systemd unit
-└── systemd/
-    └── vaultctl.service  # production unit template
+├── install-backup.sh   # installs the offsite backup engine + weekly user timer
+├── vaultctl-db-backup  # encrypted offsite snapshot engine (GPG envelope → private repo)
+├── systemd/
+│   ├── vaultctl.service            # production unit template
+│   ├── vaultctl-db-backup.service  # one-shot backup unit
+│   └── vaultctl-db-backup.timer    # weekly schedule (Sun 02:00)
 vaultctl-web/
 ├── serve.py            # optional web frontend (Svelte/Vite + proxy to :8787)
 └── systemd/
     └── vaultweb.service  # optional unit (port 8788) — not enabled by default
+skills/
+└── vaultctl-backup/
+    └── SKILL.md        # agent skill: install, operate, restore the backup
 ```
 
 ## FAQ

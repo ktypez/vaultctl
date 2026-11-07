@@ -1,0 +1,11 @@
+[Unit]
+Description=Weekly encrypted vaultctl database backup
+
+[Timer]
+OnCalendar=Sun *-*-* 02:00:00
+Persistent=true
+RandomizedDelaySec=15m
+Unit=vaultctl-db-backup.service
+
+[Install]
+WantedBy=timers.target
