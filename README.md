@@ -80,7 +80,7 @@ vaultctl list                      # all entry names
 vaultctl get NOUS_API_KEY          # print a secret to stdout (trusted shells only)
 vaultctl set MY_TOKEN "abc123"     # create/update
 vaultctl delete MY_TOKEN           # remove
-vaultctl ui                        # pretty terminal UI (Textual) — search, copy, CRUD, audit
+vaultctl ui                        # pretty terminal UI (OpenTUI) — search, copy, CRUD, audit
 vaultctl status                    # initialized / unlocked?
 vaultctl lock                      # wipe the session
 vaultctl exec NOUS_API_KEY -- <cmd> [args...]   # inject into child env; value never printed (masked)
@@ -89,22 +89,27 @@ vaultctl audit [N]                 # last N audit records (JSONL, never values)
 
 ### Terminal UI (`vaultctl ui` / `vault-tui`)
 
-A full-screen Textual dashboard over the same API, in the Kinko visual style
-(金 seal, monochrome + hanko-red accent):
+A full-screen dashboard over the same API, in the Kinko visual style
+(金 seal, monochrome + hanko-red accent). Built on **OpenTUI**
+(`@opentui/core`, run with Bun):
 
 - Live search (`/`), masked detail panel, clipboard copy via
-  `wl-copy`/`xclip`/`xsel`/`termux-clipboard-set`/`pbcopy` (OSC52 fallback)
+  `wl-copy`/`xclip`/`xsel`/`pbcopy` (OSC52 fallback)
 - Keyboard CRUD: `n` new, `e` edit, `d` delete (confirm dialog),
-  `u`/`U` unlock/lock, `r` refresh, `a` audit log overlay, `q` quit
+  `u`/`l` unlock/lock, `r` refresh, `a` audit log overlay, `q` quit
 - Works anywhere: `vaultctl ui` or the `vault-tui` launcher on PATH.
-  Install with `./install-tui.sh` (adds `textual` to system python, no sudo).
+  Install with `./install-tui.sh` (ensures bun, installs OpenTUI deps, writes
+  the launcher — no sudo). `deploy.sh` runs it automatically.
+  `vaultctl ui` falls back to the older Textual UI (`vault_tui.py`) if
+  opentui/ or bun is missing.
   The TUI reuses the same session files (`~/.vault-password`, `~/.vault-cookie`,
-  `~/.vault-csrf`) as the plain CLI.
+  `~/.vault-csrf`) as the plain CLI. Values are only ever held in memory.
 
 ```bash
 vaultctl ui                        # open the dashboard
+vaultctl ui --check                # non-interactive backend self-test
 vault-tui                          # same, via launcher
-cd vaultctl && ./install-tui.sh    # (re)install launcher + textual
+cd vaultctl && ./install-tui.sh    # (re)install bun + OpenTUI deps + launcher
 ```
 
 Point tools at any vault instance with `VAULT_URL`:
@@ -246,8 +251,10 @@ kinko/
 ├── app.py              # the vault: Flask service + embedded UI (~1,300 lines)
 ├── mock_vault.py       # dev-only mock, identical API shape
 ├── vaultctl            # CLI client (audit, exec, get, set, …)
-├── vault_tui.py        # pretty terminal UI (Textual) — vaultctl ui / vault-tui
-├── install-tui.sh      # installs textual + the vault-tui launcher (no sudo)
+├── vault_tui.py        # legacy terminal UI (Textual) — fallback for vaultctl ui
+├── install-tui.sh      # installs bun + OpenTUI deps + the vault-tui launcher (no sudo)
+├── opentui/            # OpenTUI front-end (bun + @opentui/core)
+│   └── src/kinko_tui.ts     # main TUI — vaultctl ui / vault-tui
 ├── run.sh / stop.sh    # manual launchers (mock by default)
 ├── deploy.sh           # source → service-root sync (+ installs vaultctl)
 ├── install.sh          # installs the systemd unit

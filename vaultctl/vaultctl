@@ -4,7 +4,8 @@
 Usage:
   vaultctl status
   vaultctl list
-  vaultctl ui                # pretty Textual TUI (needs tty)
+  vaultctl ui                # pretty terminal UI (OpenTUI, needs tty)
+  vaultctl ui --check         # non-interactive backend self-test
   vaultctl get <name>
   vaultctl set <name> <value>
   vaultctl delete <name>
@@ -122,16 +123,33 @@ def main(argv):
     cmd = argv[1]
 
     if cmd == "ui":
-        tui = os.path.join(os.path.dirname(os.path.abspath(__file__)), "vault_tui.py")
+        # OpenTUI (Bun) front-end — preferred. Falls back to the older
+        # Textual UI if opentui/ is not present or bun is unavailable.
+        import sys as _sys
+        here = os.path.dirname(os.path.abspath(__file__))
+        cand_paths = [
+            os.path.join(here, "opentui", "src", "kinko_tui.ts"),
+            os.path.expanduser("~/.local/share/kinko/opentui/src/kinko_tui.ts"),
+        ]
+        tui_ts = next((p for p in cand_paths if os.path.exists(p)), None)
+        bun = None
+        for b in (os.environ.get("BUN", ""), os.path.expanduser("~/.bun/bin/bun")):
+            if b and os.path.exists(b):
+                bun = b
+                break
+        if tui_ts and bun:
+            _sys.stdout.flush()
+            _sys.stderr.flush()
+            os.execv(bun, [bun, tui_ts] + argv[2:])
+        # legacy Textual fallback
+        tui = os.path.join(here, "vault_tui.py")
         if not os.path.exists(tui):
-            # installed copy (service root): look next to the running backend
             cand = os.path.expanduser("~/.local/share/kinko/vault_tui.py")
             if os.path.exists(cand):
                 tui = cand
         if not os.path.exists(tui):
-            sys.stderr.write("vault_tui.py not found next to vaultctl\n")
+            sys.stderr.write("no TUI found: opentui/src/kinko_tui.ts and vault_tui.py both missing\n")
             sys.exit(1)
-        import sys as _sys
         _sys.stdout.flush()
         _sys.stderr.flush()
         os.execv(_sys.executable, [_sys.executable, tui])

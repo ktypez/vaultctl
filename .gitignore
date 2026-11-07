@@ -9,3 +9,7 @@ data/
 *.enc
 sessions.json
 *.log
+
+# OpenTUI / Bun (installed by vaultctl/install-tui.sh — not committed)
+vaultctl/opentui/node_modules/
+vaultctl/opentui/__pycache__/
