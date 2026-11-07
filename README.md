@@ -80,10 +80,31 @@ vaultctl list                      # all entry names
 vaultctl get NOUS_API_KEY          # print a secret to stdout (trusted shells only)
 vaultctl set MY_TOKEN "abc123"     # create/update
 vaultctl delete MY_TOKEN           # remove
+vaultctl ui                        # pretty terminal UI (Textual) — search, copy, CRUD, audit
 vaultctl status                    # initialized / unlocked?
 vaultctl lock                      # wipe the session
 vaultctl exec NOUS_API_KEY -- <cmd> [args...]   # inject into child env; value never printed (masked)
 vaultctl audit [N]                 # last N audit records (JSONL, never values)
+```
+
+### Terminal UI (`vaultctl ui` / `vault-tui`)
+
+A full-screen Textual dashboard over the same API, in the Kinko visual style
+(金 seal, monochrome + hanko-red accent):
+
+- Live search (`/`), masked detail panel, clipboard copy via
+  `wl-copy`/`xclip`/`xsel`/`termux-clipboard-set`/`pbcopy` (OSC52 fallback)
+- Keyboard CRUD: `n` new, `e` edit, `d` delete (confirm dialog),
+  `u`/`U` unlock/lock, `r` refresh, `a` audit log overlay, `q` quit
+- Works anywhere: `vaultctl ui` or the `vault-tui` launcher on PATH.
+  Install with `./install-tui.sh` (adds `textual` to system python, no sudo).
+  The TUI reuses the same session files (`~/.vault-password`, `~/.vault-cookie`,
+  `~/.vault-csrf`) as the plain CLI.
+
+```bash
+vaultctl ui                        # open the dashboard
+vault-tui                          # same, via launcher
+cd vaultctl && ./install-tui.sh    # (re)install launcher + textual
 ```
 
 Point tools at any vault instance with `VAULT_URL`:
@@ -225,6 +246,8 @@ kinko/
 ├── app.py              # the vault: Flask service + embedded UI (~1,300 lines)
 ├── mock_vault.py       # dev-only mock, identical API shape
 ├── vaultctl            # CLI client (audit, exec, get, set, …)
+├── vault_tui.py        # pretty terminal UI (Textual) — vaultctl ui / vault-tui
+├── install-tui.sh      # installs textual + the vault-tui launcher (no sudo)
 ├── run.sh / stop.sh    # manual launchers (mock by default)
 ├── deploy.sh           # source → service-root sync (+ installs vaultctl)
 ├── install.sh          # installs the systemd unit

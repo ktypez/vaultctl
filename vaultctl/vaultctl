@@ -4,6 +4,7 @@
 Usage:
   vaultctl status
   vaultctl list
+  vaultctl ui                # pretty Textual TUI (needs tty)
   vaultctl get <name>
   vaultctl set <name> <value>
   vaultctl delete <name>
@@ -119,6 +120,21 @@ def main(argv):
     if len(argv) < 2:
         print(__doc__); sys.exit(0)
     cmd = argv[1]
+
+    if cmd == "ui":
+        tui = os.path.join(os.path.dirname(os.path.abspath(__file__)), "vault_tui.py")
+        if not os.path.exists(tui):
+            # installed copy (service root): look next to the running backend
+            cand = os.path.expanduser("~/.local/share/kinko/vault_tui.py")
+            if os.path.exists(cand):
+                tui = cand
+        if not os.path.exists(tui):
+            sys.stderr.write("vault_tui.py not found next to vaultctl\n")
+            sys.exit(1)
+        import sys as _sys
+        _sys.stdout.flush()
+        _sys.stderr.flush()
+        os.execv(_sys.executable, [_sys.executable, tui])
 
     if cmd == "status":
         code, j = req("GET", "/api/status")

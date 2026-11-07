@@ -24,6 +24,10 @@ if [ -x "$SRC/vaultctl" ]; then
   mkdir -p "$HOME/.opencode/bin"
   ln -sf "$HOME/.local/bin/vaultctl" "$HOME/.opencode/bin/vaultctl"
   echo "installed: vaultctl -> $HOME/.local/bin/vaultctl"
+  # also expose the TUI launcher (idempotent)
+  if [ -x "$SRC/install-tui.sh" ]; then
+    "$SRC/install-tui.sh"
+  fi
 fi
 
 # run installer if present
