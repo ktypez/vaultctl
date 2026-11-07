@@ -44,6 +44,10 @@ export async function api(path, method = 'GET', body = null) {
     const res = await fetch(url, opts);
     let data = null;
     try { data = await res.json(); } catch (e) { /* ignore */ }
+    if (res.status === 403 && data?.error === 'invalid csrf token') {
+      clearCsrf();
+      throw new Error('Session expired — please unlock again');
+    }
     return { ok: res.ok, status: res.status, data };
   } catch (e) {
     return { ok: false, status: 0, data: { error: e.message || 'network error' } };
