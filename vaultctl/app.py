@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Kinko 金庫
+vaultctl
 ==========
 A small localhost-only web service that stores secret key/value entries
 encrypted at rest. Access is gated by a single master password.
@@ -344,7 +344,7 @@ def api_audit():
 
 
 # ---------------------------------------------------------------------------
-# Routes: UI (removed — backend is API-only; web UI lives in kinko/)
+# Routes: UI (removed — backend is API-only; web UI lives in vaultctl-web/ (optional))
 # ---------------------------------------------------------------------------
 @app.get("/")
 def index():
@@ -585,5 +585,5 @@ def _mna(_e):
 _load_sessions()
 
 if __name__ == "__main__":
-    print(f"Kinko 金庫 on http://{HOST}:{PORT}  (vault: {VAULT_PATH})")
+    print(f"vaultctl on http://{HOST}:{PORT}  (vault: {VAULT_PATH})")
     app.run(host=HOST, port=PORT, debug=False, threaded=True)

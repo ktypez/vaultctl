@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Manual launcher for Kinko.
+# Manual launcher for vaultctl.
 # Usage: ./run.sh            (mock vault by default — dev repo)
 #        VAULT_REAL=1 ./run.sh  (real encrypted vault)
 #        ./run.sh --daemon     (detached)

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Kinko mock vault — in-memory, no encryption, no password.
+"""vaultctl mock vault — in-memory, no encryption, no password.
 
-For dev only. Serves the same HTTP API shape as the real Kinko vault so
+For dev only. Serves the same HTTP API shape as the real vaultctl vault so
 consumers and `vaultctl` can point at it during development.
 
 Usage:
@@ -87,5 +87,5 @@ def change_password():
 
 
 if __name__ == "__main__":
-    print(f"Kinko MOCK vault on http://{HOST}:{PORT}  (in-memory, no secrets)")
+    print(f"vaultctl MOCK vault on http://{HOST}:{PORT}  (in-memory, no secrets)")
     app.run(host=HOST, port=PORT, debug=False, threaded=True)

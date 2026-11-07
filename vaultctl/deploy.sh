@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Deploy Kinko from the dev repo to the service root (no git, runtime files).
-# Dev = this git repo; Service = $KINKO_SERVICE_ROOT (default ~/.local/share/kinko).
-# Data lives in $KINKO_SERVICE_ROOT/data and is never touched by this script.
+# Deploy vaultctl from the dev repo to the service root (no git, runtime files).
+# Dev = this git repo; Service = $VAULTCTL_SERVICE_ROOT (default ~/.local/share/vaultctl).
+# Data lives in $VAULTCTL_SERVICE_ROOT/data and is never touched by this script.
 set -euo pipefail
 
 SRC="$(cd "$(dirname "$0")" && pwd)"
-DST="${KINKO_SERVICE_ROOT:-$HOME/.local/share/kinko}"
+DST="${VAULTCTL_SERVICE_ROOT:-$HOME/.local/share/vaultctl}"
 
 mkdir -p "$DST"
 rsync -a --delete \
@@ -32,5 +32,5 @@ fi
 
 # run installer if present
 if [ -x "$DST/install.sh" ]; then
-  KINKO_SERVICE_ROOT="$DST" "$DST/install.sh"
+  VAULTCTL_SERVICE_ROOT="$DST" "$DST/install.sh"
 fi

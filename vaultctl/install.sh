@@ -2,7 +2,7 @@
 # Install Vaultctl system files (systemd unit) from the service root.
 set -euo pipefail
 
-ROOT="${KINKO_SERVICE_ROOT:-$(cd "$(dirname "$0")" && pwd)}"
+ROOT="${VAULTCTL_SERVICE_ROOT:-$(cd "$(dirname "$0")" && pwd)}"
 UNIT_SRC="$ROOT/systemd/vaultctl.service"
 UNIT_DST="/etc/systemd/system/vaultctl.service"
 

@@ -128,8 +128,8 @@ def main(argv):
         import sys as _sys
         here = os.path.dirname(os.path.abspath(__file__))
         cand_paths = [
-            os.path.join(here, "opentui", "src", "kinko_tui.ts"),
-            os.path.expanduser("~/.local/share/kinko/opentui/src/kinko_tui.ts"),
+            os.path.join(here, "opentui", "src", "vaultctl-ui.ts"),
+            os.path.expanduser("~/.local/share/vaultctl/opentui/src/vaultctl-ui.ts"),
         ]
         tui_ts = next((p for p in cand_paths if os.path.exists(p)), None)
         bun = None
@@ -144,11 +144,11 @@ def main(argv):
         # legacy Textual fallback
         tui = os.path.join(here, "vault_tui.py")
         if not os.path.exists(tui):
-            cand = os.path.expanduser("~/.local/share/kinko/vault_tui.py")
+            cand = os.path.expanduser("~/.local/share/vaultctl/vault_tui.py")
             if os.path.exists(cand):
                 tui = cand
         if not os.path.exists(tui):
-            sys.stderr.write("no TUI found: opentui/src/kinko_tui.ts and vault_tui.py both missing\n")
+            sys.stderr.write("no TUI found: opentui/src/vaultctl-ui.ts and vault_tui.py both missing\n")
             sys.exit(1)
         _sys.stdout.flush()
         _sys.stderr.flush()

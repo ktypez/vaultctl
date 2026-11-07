@@ -1,5 +1,5 @@
 /**
- * vault-client.ts — HTTP client for the kinko vault backend.
+ * vault-client.ts — HTTP client for the vaultctl backend.
  *
  * Shares session state with the `vaultctl` CLI:
  *   ~/.vault-password (master password, 0600)

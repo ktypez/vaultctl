@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Serve the built Kinko frontend (dist/) and proxy /api/* to the vault backend."""
+"""Serve the built vaultctl-web frontend (dist/) and proxy /api/* to the vault backend."""
 import http.server
 import os
 import socket
@@ -88,7 +88,7 @@ def main():
     if not DIST.exists():
         raise SystemExit(f"dist/ not found at {DIST}; run npm run build first")
     httpd = http.server.ThreadingHTTPServer(("0.0.0.0", PORT), Handler)
-    print(f"Kinko frontend on http://0.0.0.0:{PORT} (proxy /api -> {VAULT_URL})")
+    print(f"vaultweb frontend on http://0.0.0.0:{PORT} (proxy /api -> {VAULT_URL})")
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:

@@ -1,6 +1,6 @@
-# Kinko — Svelte Web UI for Vaultctl (credentials vault)
+# vaultctl-web — Svelte Web UI for vaultctl (credentials vault, optional)
 
-You are working in `/home/admin/projects/kinko/kinko/`, a freshly scaffolded Svelte + Vite app.
+You are working in `/home/admin/projects/kinko/vaultctl-web/`, a freshly scaffolded Svelte + Vite app.
 Build a complete web UI that talks to the Vaultctl backend (credentials vault) HTTP API.
 
 ## Backend API (vaultctl, default base URL http://127.0.0.1:8787)
@@ -24,7 +24,7 @@ Base URL configurable via Vite env `VITE_VAULT_URL` (default http://127.0.0.1:87
 
 ## Features to implement
 
-1. App shell: header with logo "Kinko 金庫", theme toggle (light/dark, persist in localStorage), and (when unlocked) lock button + settings link.
+1. App shell: header with logo "vaultctl web", theme toggle (light/dark, persist in localStorage), and (when unlocked) lock button + settings link.
 2. Auth flow:
    - On load, call /api/status.
    - If not initialized: show Setup form (password + confirm, min 8 chars). On submit -> /api/setup, store csrf, go to vault.
@@ -42,7 +42,7 @@ Base URL configurable via Vite env `VITE_VAULT_URL` (default http://127.0.0.1:87
 
 ## Design
 
-Port the visual style from the old Kinko template in /home/admin/projects/kinko/vaultctl/app.py (the TEMPLATE string). Extract the CSS variables and component styles and put them in src/app.css (global). Keep the washi/anime aesthetic: serif display font, mono for keys/values, the color palette (light + dark), card surfaces, grain overlay, fade-up animations.
+Port the visual style from the old template in /home/admin/projects/kinko/vaultctl/app.py (the TEMPLATE string). Extract the CSS variables and component styles and put them in src/app.css (global). Keep the washi/anime aesthetic: serif display font, mono for keys/values, the color palette (light + dark), card surfaces, grain overlay, fade-up animations.
 
 Key CSS variables (from the template):
 - Light: --bg #f4efe6, --bg2 #fbf8f2, --ink #1f1a14, --muted #6b6256, --line #d9d0c0, --accent #c8553d, --accent-soft rgba(200,85,61,.12), --ok #2f6b3a, --err #9b2c2c, --card #fffaf0
@@ -64,7 +64,7 @@ Include Google Fonts link in index.html for Fraunces, Inter, JetBrains Mono.
 - Working `npm run dev` (Vite dev server with proxy /api -> http://127.0.0.1:8787) and `npm run build`.
 - All features above functional.
 - A `serve.py` (Python, in project root) that serves `dist/` on PORT (default 8788) and proxies `/api/*` to VAULT_URL (default http://127.0.0.1:8787). Used for production.
-- A `kinko.service` systemd unit example in `systemd/` for the frontend service (port 8788).
+- A `vaultweb.service` systemd unit example (optional; enable only if you want the web UI) in `systemd/` for the frontend service (port 8788).
 - Update README.md with dev/build/run instructions.
 
 Please implement fully. Test by running `npm run build` (must succeed) and `npm run dev` briefly. Do not break the existing vaultctl backend.

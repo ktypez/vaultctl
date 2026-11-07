@@ -6,15 +6,15 @@ After=network.target
 Type=simple
 User=admin
 Group=admin
-WorkingDirectory=/home/admin/.local/share/kinko
+WorkingDirectory=/home/admin/.local/share/vaultctl
 Environment="VAULT_HOST=0.0.0.0"
 Environment="VAULT_PORT=8787"
-Environment="VAULT_DATA_DIR=/home/admin/.local/share/kinko/data"
-ExecStart=/home/admin/.local/share/kinko/venv/bin/python /home/admin/.local/share/kinko/app.py
+Environment="VAULT_DATA_DIR=/home/admin/.local/share/vaultctl/data"
+ExecStart=/home/admin/.local/share/vaultctl/venv/bin/python /home/admin/.local/share/vaultctl/app.py
 Restart=on-failure
 RestartSec=3
-StandardOutput=append:/home/admin/.local/share/kinko/data/logs/vault.log
-StandardError=append:/home/admin/.local/share/kinko/data/logs/vault.log
+StandardOutput=append:/home/admin/.local/share/vaultctl/data/logs/vault.log
+StandardError=append:/home/admin/.local/share/vaultctl/data/logs/vault.log
 
 [Install]
 WantedBy=multi-user.target

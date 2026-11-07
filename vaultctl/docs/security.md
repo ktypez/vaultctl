@@ -1,6 +1,6 @@
 # Security & threat model
 
-## What Kinko protects against
+## What vaultctl protects against
 
 - **Secrets at rest.** `credentials.enc` is AES-256-GCM ciphertext. The key is
   derived from your master password with PBKDF2-HMAC-SHA256 (600,000
@@ -20,18 +20,18 @@
   `data/audit.jsonl` (mode `0600`) with the decision and reason — never the
   value — so access attempts are reviewable after the fact.
 
-## What Kinko does *not* protect against
+## What vaultctl does *not* protect against
 
 - **Single-uid mode is not a boundary.** The broker (and `vaultctl`) run as
   your user. Anything else running as you — including an agent with a shell —
   can read `~/.vault-password`, the cookie files, or the vault file directly.
-  Kinko assumes the OS user is the trust boundary.
+  vaultctl assumes the OS user is the trust boundary.
 - **Output masking is not containment.** It byte-matches the resolved value in
   child output, so `base64`, `tr`, or `rev` walk straight through it. It
   prevents accidental echo, not a hostile child. Do not allow untrusted binaries
   to receive secrets.
 - **Use is not safety.** An agent that can use a credential can do whatever
-  that credential allows. Kinko hides the *value*, not the *power*.
+  that credential allows. vaultctl hides the *value*, not the *power*.
 - **Static secrets.** There is no TTL or just-in-time issuance; a stored
   password is long-lived by nature.
 - **Root / passwordless sudo.** Anyone with root can read process memory and

@@ -1,11 +1,11 @@
 {
-  "name": "vault-tui",
+  "name": "vaultctl-ui",
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Kinko credentials vault — terminal UI built on OpenTUI (@opentui/core)",
+  "description": "vaultctl credentials vault — terminal UI built on OpenTUI (@opentui/core)",
   "scripts": {
-    "start": "bun run vault-tui.ts"
+    "start": "bun run vaultctl-ui.ts"
   },
   "dependencies": {
     "@opentui/core": "0.8.3"

@@ -1,8 +1,8 @@
 /**
- * kinko_tui.ts — KINKO VAULT terminal UI, built on OpenTUI (@opentui/core).
+ * vaultctl-ui.ts — vaultctl terminal UI, built on OpenTUI (@opentui/core).
  *
- *   bun run src/kinko_tui.ts          # interactive
- *   bun run src/kinko_tui.ts --check  # non-interactive backend self-test
+ *   bun run src/vaultctl-ui.ts          # interactive
+ *   bun run src/vaultctl-ui.ts --check  # non-interactive backend self-test
  *
  * Security: entry values are only held in memory. They are never logged,
  * never written to disk by the TUI, and never rendered unless the user
@@ -112,7 +112,7 @@ class Modal {
 }
 
 // ------------------------------------------------------------------ app ----
-class KinkoApp {
+class VaultctlApp {
   renderer: any;
   client = new VaultClient();
 
@@ -155,7 +155,7 @@ class KinkoApp {
       border: true,
       borderStyle: "rounded",
       borderColor: T.accent,
-      title: " KINKO VAULT 金 ",
+      title: " vaultctl ",
       titleAlignment: "center",
       titleColor: T.gold,
       backgroundColor: T.panel,
@@ -881,16 +881,16 @@ async function main() {
     process.exit(await selfCheck());
   }
   if (args.includes("--help") || args.includes("-h")) {
-    console.log("kinko TUI (OpenTUI)\n  --check  non-interactive backend self-test\n  --help   this text");
+    console.log("vaultctl TUI (OpenTUI)\n  --check  non-interactive backend self-test\n  --help   this text");
     process.exit(0);
   }
   if (!process.stdin.isTTY || !process.stdout.isTTY) {
-    process.stderr.write("kinko TUI needs an interactive terminal (run `vaultctl ui`)\n");
+    process.stderr.write("vaultctl TUI needs an interactive terminal (run `vaultctl ui`)\n");
     process.exit(2);
   }
 
   const renderer = await createCliRenderer({ exitOnCtrlC: true, useMouse: false });
-  const app = new KinkoApp(renderer);
+  const app = new VaultctlApp(renderer);
   await app.start();
 }
 

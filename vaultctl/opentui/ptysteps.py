@@ -54,7 +54,7 @@ def snapshot(screen, title):
 
 
 def main():
-    script = sys.argv[1] if len(sys.argv) > 1 else "src/kinko_tui.ts"
+    script = sys.argv[1] if len(sys.argv) > 1 else "src/vaultctl-ui.ts"
     spec = sys.argv[2] if len(sys.argv) > 2 else ""
     steps = [s for s in spec.split(",")] if spec else []
     p, m, screen, stream = start(script)

@@ -1,13 +1,13 @@
 # Deployment
 
-Kinko separates **source** from **runtime**: edit this repo, deploy a clean
+vaultctl separates **source** from **runtime**: edit this repo, deploy a clean
 copy to a service root, and let systemd manage it.
 
 ## Source vs. service root
 
 - Source (this repo): `~/projects/kinko`
-- Service root (default): `~/.local/share/kinko`
-- Data lives in `$KINKO_SERVICE_ROOT/data` and is **never** touched by
+- Service root (default): `~/.local/share/vaultctl`
+- Data lives in `$VAULTCTL_SERVICE_ROOT/data` and is **never** touched by
   `deploy.sh`.
 
 ## Deploy
@@ -15,7 +15,7 @@ copy to a service root, and let systemd manage it.
 ```bash
 ./deploy.sh                  # rsyncs source → service root (excl. .git, venv cache, data)
 # then manage the service:
-sudo systemctl restart kinko
+sudo systemctl restart vaultctl
 ```
 
 `deploy.sh` also installs the `vaultctl` CLI onto `~/.local/bin` and symlinks
@@ -25,10 +25,10 @@ client.
 ## Service management
 
 ```bash
-sudo systemctl status kinko
-sudo systemctl stop kinko
-sudo systemctl restart kinko
-journalctl -u kinko -f
+sudo systemctl status vaultctl
+sudo systemctl stop vaultctl
+sudo systemctl restart vaultctl
+journalctl -u vaultctl -f
 ```
 
 The installed unit runs from the service root with `VAULT_DATA_DIR` pointed at

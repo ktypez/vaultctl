@@ -1,8 +1,8 @@
 <div align="center">
 
-<p align="center"><img src="assets/logo.png" width="96" alt="Kinko 金庫"></p>
+<p align="center"><img src="vaultctl/assets/logo.png" width="96" alt="vaultctl"></p>
 
-# 🔐 Kinko 金庫
+# 🔐 vaultctl
 
 **A zero-knowledge, password-gated credentials vault for your local network.**
 
@@ -20,7 +20,7 @@ PBKDF2-derived keys, nothing leaves your machine.
 This is a monorepo with two components:
 
 - `vaultctl/` — **credentials vault backend** (Flask API, encrypted store, `vaultctl` CLI). Service: `vaultctl.service` on `:8787`.
-- `kinko/` — **web UI frontend** (Svelte + Vite SPA, served via `serve.py`). Service: `kinko.service` on `:8788` (proxies `/api/*` to vaultctl).
+- `vaultctl-web/` — **web UI frontend (optional)** (Svelte + Vite SPA, served via `serve.py`). Service: `vaultweb.service` on `:8788` (proxies `/api/*` to vaultctl). Not required — CLI/TUI are the primary interface.
 
 The frontend talks to the backend through relative `/api/*` (proxied in dev by Vite, in prod by `serve.py`).
 
@@ -29,7 +29,7 @@ The frontend talks to the backend through relative `/api/*` (proxied in dev by V
 
 You have secrets scattered across `.env` files, shell history, and browser
 password managers. Cloud secret managers need accounts, billing, and trust in
-someone else's infrastructure. **Kinko is the opposite:** a single Python file
+someone else's infrastructure. **vaultctl is the opposite:** a single Python file
 that runs on your own box, encrypts everything with a key derived only from
 your master password, and serves it through a clean web UI plus a tiny CLI.
 
@@ -87,19 +87,18 @@ vaultctl exec NOUS_API_KEY -- <cmd> [args...]   # inject into child env; value n
 vaultctl audit [N]                 # last N audit records (JSONL, never values)
 ```
 
-### Terminal UI (`vaultctl ui` / `vault-tui`)
+### Terminal UI (`vaultctl ui`)
 
-A full-screen dashboard over the same API, in the Kinko visual style
-(金 seal, monochrome + hanko-red accent). Built on **OpenTUI**
+A full-screen dashboard over the same API, in the vaultctl visual style
+(monochrome + hanko-red accent). Built on **OpenTUI**
 (`@opentui/core`, run with Bun):
 
 - Live search (`/`), masked detail panel, clipboard copy via
   `wl-copy`/`xclip`/`xsel`/`pbcopy` (OSC52 fallback)
 - Keyboard CRUD: `n` new, `e` edit, `d` delete (confirm dialog),
   `u`/`l` unlock/lock, `r` refresh, `a` audit log overlay, `q` quit
-- Works anywhere: `vaultctl ui` or the `vault-tui` launcher on PATH.
-  Install with `./install-tui.sh` (ensures bun, installs OpenTUI deps, writes
-  the launcher — no sudo). `deploy.sh` runs it automatically.
+- Works anywhere: `vaultctl ui` is the single entry point (no separate vault-tui launcher).
+  Install with `./install-tui.sh` (ensures bun, installs OpenTUI deps — no sudo). `deploy.sh` runs it automatically.
   `vaultctl ui` falls back to the older Textual UI (`vault_tui.py`) if
   opentui/ or bun is missing.
   The TUI reuses the same session files (`~/.vault-password`, `~/.vault-cookie`,
@@ -108,8 +107,7 @@ A full-screen dashboard over the same API, in the Kinko visual style
 ```bash
 vaultctl ui                        # open the dashboard
 vaultctl ui --check                # non-interactive backend self-test
-vault-tui                          # same, via launcher
-cd vaultctl && ./install-tui.sh    # (re)install bun + OpenTUI deps + launcher
+cd vaultctl && ./install-tui.sh    # (re)install bun + OpenTUI deps
 ```
 
 Point tools at any vault instance with `VAULT_URL`:
@@ -208,12 +206,12 @@ All optional, via environment variables:
 
 ## Deployment (systemd)
 
-Kinko separates **source** from **runtime**: edit this repo, deploy a clean
+vaultctl separates **source** from **runtime**: edit this repo, deploy a clean
 copy to a service root, and let systemd manage it.
 
 ```bash
-./deploy.sh                  # rsyncs source → ~/.local/share/kinko (excl. .git, venv cache, data)
-sudo systemctl restart kinko # then manage as usual
+./deploy.sh                  # rsyncs source → ~/.local/share/vaultctl (excl. .git, venv cache, data)
+sudo systemctl restart vaultctl # then manage as usual
 ```
 
 The installed unit runs from the service root with `VAULT_DATA_DIR` pointed at
@@ -221,9 +219,9 @@ its own `data/` directory, so the production service never executes out of a
 dev checkout.
 
 ```bash
-sudo systemctl status kinko
-sudo systemctl stop kinko
-journalctl -u kinko -f
+sudo systemctl status vaultctl
+sudo systemctl stop vaultctl
+journalctl -u vaultctl -f
 ```
 
 ## Security notes
@@ -247,19 +245,23 @@ journalctl -u kinko -f
 ## Repository layout
 
 ```
-kinko/
+vaultctl/
 ├── app.py              # the vault: Flask service + embedded UI (~1,300 lines)
 ├── mock_vault.py       # dev-only mock, identical API shape
 ├── vaultctl            # CLI client (audit, exec, get, set, …)
 ├── vault_tui.py        # legacy terminal UI (Textual) — fallback for vaultctl ui
-├── install-tui.sh      # installs bun + OpenTUI deps + the vault-tui launcher (no sudo)
+├── install-tui.sh      # installs bun + OpenTUI deps (no sudo)
 ├── opentui/            # OpenTUI front-end (bun + @opentui/core)
-│   └── src/kinko_tui.ts     # main TUI — vaultctl ui / vault-tui
+│   └── src/vaultctl-ui.ts   # main TUI — vaultctl ui
 ├── run.sh / stop.sh    # manual launchers (mock by default)
 ├── deploy.sh           # source → service-root sync (+ installs vaultctl)
 ├── install.sh          # installs the systemd unit
 └── systemd/
-    └── kinko.service   # production unit template
+    └── vaultctl.service  # production unit template
+vaultctl-web/
+├── serve.py            # optional web frontend (Svelte/Vite + proxy to :8787)
+└── systemd/
+    └── vaultweb.service  # optional unit (port 8788) — not enabled by default
 ```
 
 ## FAQ
@@ -274,8 +276,8 @@ No — `vaultctl` and the HTTP API cover everything headlessly.
 They face 600k PBKDF2 iterations per guess, offline, with nothing else to
 leak. Use a strong password and sleep well.
 
-**Why "Kinko"?**
-金庫 (*kinko*) — Japanese for "safe/vault." The UI matches the vibe. 🌸
+**Why "vaultctl"?**
+`vault` (credentials vault) + `ctl` (control). One name for CLI, TUI, and the optional web UI — no separate product brand.
 
 ## License
 

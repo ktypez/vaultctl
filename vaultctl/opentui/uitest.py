@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Drive the OpenTUI kinko TUI inside a pty and capture each step.
+"""Drive the OpenTUI vaultctl TUI inside a pty and capture each step.
 
 Only a dummy entry (TUI_OT_TEST) is ever revealed, so no real secret is
 expected to appear in the captured output.
@@ -13,7 +13,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from ptyharness import run  # noqa: E402  (opentui/ptyharness.py)
 
 VAULTCTL = os.path.expanduser("~/.local/bin/vaultctl")
-SCRIPT = "src/kinko_tui.ts"
+SCRIPT = "src/vaultctl-ui.ts"
 
 
 def cli(*args):

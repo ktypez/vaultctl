@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "vault-tui",
+      "name": "vaultctl-ui",
       "dependencies": {
         "@opentui/core": "0.8.3",
       },

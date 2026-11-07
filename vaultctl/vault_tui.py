@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""vault_tui — pretty terminal UI for the kinko credentials vault (vaultctl API).
+"""vault_tui — pretty terminal UI for the vaultctl credentials vault (vaultctl API).
 
 Launched by `vaultctl ui` / `vaultctl tui`. Talks to the same Flask API as the
 plain CLI, reuses ~/.vault-password, ~/.vault-cookie and ~/.vault-csrf.
@@ -274,13 +274,13 @@ class Confirm(ModalScreen):
 # --------------------------------------------------------------------------- #
 # Main app
 # --------------------------------------------------------------------------- #
-SEAL = "[bold red]金[/] "
+SEAL = "[bold red]V[/] "
 
 STATUS_DOT = {True: "[green]●[/]", False: "[red]●[/]"}
 
 
 class VaultTUI(App):
-    TITLE = "kinko vault"
+    TITLE = "vaultctl"
     CSS = """
     Screen { background: $background; }
 
@@ -362,7 +362,7 @@ class VaultTUI(App):
         yield Header(show_clock=True)
         with Vertical():
             with Horizontal(id="banner"):
-                yield Static(SEAL + "[bold]kinko[/]  [dim]credentials vault[/]",
+                yield Static(SEAL + "[bold]vaultctl[/]  [dim]credentials vault[/]",
                              id="brand-block", markup=True)
             with Horizontal(id="main"):
                 with Vertical(id="left"):

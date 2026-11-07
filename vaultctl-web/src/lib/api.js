@@ -2,14 +2,14 @@ const BASE = (import.meta.env.VITE_VAULT_URL || '').replace(/\/$/, '');
 
 let csrfToken = null;
 try {
-  csrfToken = sessionStorage.getItem('kinko_csrf');
+  csrfToken = sessionStorage.getItem('vaultctl_csrf');
 } catch (e) {
   csrfToken = null;
 }
 
 export function getCsrf() {
   if (!csrfToken) {
-    try { csrfToken = sessionStorage.getItem('kinko_csrf'); } catch (e) { /* ignore */ }
+    try { csrfToken = sessionStorage.getItem('vaultctl_csrf'); } catch (e) { /* ignore */ }
   }
   return csrfToken;
 }
@@ -17,8 +17,8 @@ export function getCsrf() {
 export function setCsrf(token) {
   csrfToken = token || null;
   try {
-    if (token) sessionStorage.setItem('kinko_csrf', token);
-    else sessionStorage.removeItem('kinko_csrf');
+    if (token) sessionStorage.setItem('vaultctl_csrf', token);
+    else sessionStorage.removeItem('vaultctl_csrf');
   } catch (e) { /* ignore */ }
 }
 

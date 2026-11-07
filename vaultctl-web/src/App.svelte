@@ -249,8 +249,8 @@
 <header class="topbar">
   <div class="inner">
     <div class="brand">
-      <span class="seal">金</span>
-      <div class="name">Kinko <span class="jp">金庫</span></div>
+      <span class="seal">V</span>
+      <div class="name">vaultctl <span class="jp">web</span></div>
     </div>
     <div class="actions">
       {#if initialized}
@@ -271,7 +271,7 @@
   {#if !initialized}
     <section class="auth" transition:fade={{ duration: 200 }}>
       <div class="card">
-        <div class="icon">金</div>
+        <div class="icon">V</div>
         <h2>Create your vault</h2>
         <p class="sub">Choose a strong master password. It is never stored — lose it and the data is unrecoverable.</p>
         <div class="field">
@@ -296,7 +296,7 @@
   {:else if !unlocked}
     <section class="auth" transition:fade={{ duration: 200 }}>
       <div class="card">
-        <div class="icon">金</div>
+        <div class="icon">V</div>
         <h2>Unlock vault</h2>
         <p class="sub">Enter your master password to access your credentials.</p>
         <div class="field">

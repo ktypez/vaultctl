@@ -1,6 +1,6 @@
-# Kinko — Svelte Web UI for Vaultctl
+# vaultctl-web — Svelte Web UI for vaultctl (optional)
 
-A pure SPA (Svelte + Vite) front-end for the Vaultctl credentials vault.
+A pure SPA (Svelte + Vite) front-end for the vaultctl credentials vault. Optional — not required; vaultctl CLI / TUI cover everything headlessly.
 
 ## Development
 
