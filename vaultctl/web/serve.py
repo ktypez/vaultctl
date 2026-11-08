@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
-"""Serve the built vaultctl-web frontend (dist/) and proxy /api/* to the vault backend."""
+"""Serve the built vaultctl web frontend (dist/) and proxy /api/* to the vault backend."""
 import http.server
 import os
-import socket
 import threading
 import urllib.error
 import urllib.request

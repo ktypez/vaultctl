@@ -65,11 +65,22 @@ key + value      ──▶ AES-256-GCM (random 12-byte nonce)   ──▶ creden
 
 ### Web UI
 
+Start the encrypted backend:
+
 ```bash
-VAULT_REAL=1 ./run.sh --daemon  # starts the encrypted vault on http://127.0.0.1:8787
+VAULT_REAL=1 ./run.sh --daemon
 ```
 
-Open the browser, set a master password (≥ 8 chars), add entries. Done.
+In another terminal, build and serve the optional frontend:
+
+```bash
+cd vaultctl/web
+npm ci
+npm run build
+python3 serve.py
+```
+
+Open `http://127.0.0.1:8788`, set a strong master password, and add entries. The backend API stays on `127.0.0.1:8787`; the web server proxies same-origin `/api/*` requests.
 
 > ⚠️ If you lose the master password, the data is unrecoverable. That's not a
 > bug — it's the threat model.

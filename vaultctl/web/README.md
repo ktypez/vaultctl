@@ -63,4 +63,4 @@ The Vite dev/preview proxy target is set separately in `vite.config.js` and curr
 
 ## Project status
 
-The checked-in systemd example is `systemd/vaultweb.service`; it expects this repository at `/home/admin/projects/vaultctl/vaultctl-web` and serves port `8788`. Adjust paths, account, and backend URL before using it elsewhere. Build the frontend again after changing source files, then restart the service to load the new `dist/` assets.
+The checked-in systemd example is `systemd/vaultweb.service`; it expects this repository at `/home/admin/projects/vaultctl/vaultctl/web` and serves port `8788`. Adjust paths, account, and backend URL before using it elsewhere. Build the frontend again after changing source files, then restart the service to load the new `dist/` assets.
