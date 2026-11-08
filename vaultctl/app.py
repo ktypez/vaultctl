@@ -133,6 +133,7 @@ def save_vault(data: dict) -> None:
     # Create the temporary file with restrictive permissions before writing.
     tmp = VAULT_PATH + ".tmp"
     fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    os.fchmod(fd, 0o600)
     try:
         with os.fdopen(fd, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2)
@@ -534,7 +535,14 @@ def change_password():
         "entries": new_entries,
     })
     with _sessions_lock:
+        # Password rotation invalidates every other session: its cached key
+        # can no longer decrypt the newly re-encrypted vault.
+        for other_token in list(_sessions):
+            if other_token != token:
+                _sessions.pop(other_token, None)
         _sessions[token]["key"] = new_key
+        _sessions[token]["expires"] = time.time() + SESSION_TTL
+    audit("change_password", "*", "allow", "ok")
     return jsonify({"ok": True})
 
 

@@ -17,7 +17,7 @@ HOST=127.0.0.1 PORT=8788 VAULT_URL=http://127.0.0.1:8787 python3 serve.py
 
 `serve.py` requires an existing `dist/` directory, serves it on `127.0.0.1:$PORT` by default, and forwards `/api/*` requests to `VAULT_URL`. Defaults are port `8788` and backend `http://127.0.0.1:8787`. The backend must be running and reachable. The browser should use same-origin API paths; leave `VITE_VAULT_URL` unset for this setup.
 
-Open `http://127.0.0.1:8788/` on the host. Since the server binds to all interfaces, only access it remotely over a trusted private network or behind a reviewed HTTPS reverse proxy and firewall. See [security notes](security.md).
+Open `http://127.0.0.1:8788/` on the host. The server binds to loopback by default. For remote access, use a trusted private network or a reviewed HTTPS reverse proxy and firewall. See [security notes](security.md).
 
 ## systemd example
 

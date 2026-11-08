@@ -24,6 +24,7 @@ Backend defaults, including KDF iterations and session TTLs, can be configured w
 - Copy is disabled until a value has been revealed.
 - The CSRF token is held in memory and browser `sessionStorage`; the master password is not saved by this frontend.
 - Sessions are not persistent: a browser session cookie is backed by an in-memory server session and service restart invalidates all sessions.
+- Changing the master password revokes all other active sessions so they cannot continue using an obsolete derived key.
 - The light/dark theme preference is stored in `localStorage` and contains no vault data.
 
 Avoid leaving the vault unlocked or revealed on a shared screen. Lock it when finished.

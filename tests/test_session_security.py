@@ -44,6 +44,42 @@ class SessionSecurityTests(unittest.TestCase):
         self.assertIn("Secure", response.headers.get("Set-Cookie", ""))
         self.assertFalse(os.path.exists(vault.SESSIONS_FILE))
 
+    def test_password_rotation_revokes_other_sessions(self):
+        primary = self.client.post(
+            "/api/setup",
+            json={"password": "correct horse battery staple", "confirm": "correct horse battery staple"},
+        )
+        self.assertEqual(primary.status_code, 200)
+        csrf = primary.get_json()["csrf"]
+
+        second_client = vault.app.test_client()
+        unlocked = second_client.post(
+            "/api/unlock",
+            json={"password": "correct horse battery staple"},
+        )
+        self.assertEqual(unlocked.status_code, 200)
+        self.assertEqual(len(vault._sessions), 2)
+
+        changed = self.client.post(
+            "/api/change-password",
+            headers={"X-CSRF-Token": csrf},
+            json={
+                "current": "correct horse battery staple",
+                "new": "a much stronger replacement password",
+                "confirm": "a much stronger replacement password",
+            },
+        )
+        self.assertEqual(changed.status_code, 200)
+        self.assertEqual(len(vault._sessions), 1)
+        self.assertEqual(second_client.get("/api/entries").status_code, 401)
+
+        replacement_client = vault.app.test_client()
+        replacement = replacement_client.post(
+            "/api/unlock",
+            json={"password": "a much stronger replacement password"},
+        )
+        self.assertEqual(replacement.status_code, 200)
+
     def test_restart_invalidates_existing_session(self):
         response = self.client.post(
             "/api/setup",
