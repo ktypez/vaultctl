@@ -271,12 +271,11 @@ def audit(action: str, name: str, decision: str, reason: str, detail=None) -> No
         except RuntimeError:
             pass
         line = json.dumps(rec, ensure_ascii=False) + "\n"
-        with open(AUDIT_PATH, "a", encoding="utf-8") as f:
+        fd = os.open(AUDIT_PATH, os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o600)
+        os.fchmod(fd, 0o600)
+        with os.fdopen(fd, "a", encoding="utf-8") as f:
             f.write(line)
-        try:
-            os.chmod(AUDIT_PATH, 0o600)
-        except OSError:
-            pass
+            f.flush()
     except Exception:
         pass
 
@@ -561,6 +560,14 @@ def _mna(_e):
 
 # --------------------------------------------------------------------------- #
 # Load persisted sessions (remember-me) on startup
+# Tighten permissions on pre-existing sensitive files during upgrade.
+for sensitive_path in (VAULT_PATH, AUDIT_PATH):
+    try:
+        if os.path.exists(sensitive_path):
+            os.chmod(sensitive_path, 0o600)
+    except OSError:
+        app.logger.warning("Could not restrict permissions on %s", sensitive_path)
+
 # Remove legacy sessions.json files: older versions stored derived keys there.
 # Sessions are now process-memory-only, so a restart always locks the vault.
 try:

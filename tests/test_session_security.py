@@ -27,6 +27,7 @@ class SessionSecurityTests(unittest.TestCase):
         vault.ITERATIONS = 1_000
         vault.COOKIE_SECURE = True
         vault._sessions.clear()
+        vault._fail.update({"count": 0, "reset_at": 0.0, "blocked_until": 0.0})
         self.client = vault.app.test_client()
 
     def tearDown(self):
@@ -43,6 +44,18 @@ class SessionSecurityTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("Secure", response.headers.get("Set-Cookie", ""))
         self.assertFalse(os.path.exists(vault.SESSIONS_FILE))
+
+    def test_unlock_rate_limit_returns_retry_after(self):
+        self.client.post(
+            "/api/setup",
+            json={"password": "correct horse battery staple", "confirm": "correct horse battery staple"},
+        )
+        for _ in range(vault.MAX_FAIL_BEFORE_DELAY):
+            response = self.client.post("/api/unlock", json={"password": "wrong password"})
+            self.assertEqual(response.status_code, 401)
+        limited = self.client.post("/api/unlock", json={"password": "wrong password"})
+        self.assertEqual(limited.status_code, 429)
+        self.assertGreaterEqual(int(limited.headers["Retry-After"]), 1)
 
     def test_password_rotation_revokes_other_sessions(self):
         primary = self.client.post(

@@ -58,7 +58,7 @@ key + value      ──▶ AES-256-GCM (random 12-byte nonce)   ──▶ creden
 | Encryption      | AES-256-GCM, per-value random nonce                 |
 | Auth            | Single master password, never stored                |
 | Sessions        | HttpOnly cookie + CSRF token, 30-min idle expiry    |
-| Brute force     | Exponentially increasing delay after wrong attempts |
+| Brute force     | Exponential retry cooldown after repeated failures |
 | Dependencies    | Python 3 + Flask + cryptography                     |
 
 ## Quick start

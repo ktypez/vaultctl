@@ -9,7 +9,7 @@
 - **Master password never stored.** Only a salt and an encrypted verifier live
   on disk. The server holds the derived key only in RAM, only while unlocked.
 - **Session scoping.** Sessions are held only in process memory, use HttpOnly session cookies + CSRF tokens, expire after 30 minutes of inactivity, and are all invalidated on restart. Derived keys are never written to disk.
-- **Brute force.** Failed unlocks accumulate an exponentially increasing delay.
+- **Brute force.** Failed unlocks trigger an exponential retry cooldown without blocking request threads.
 - **Accidental leakage.** `vaultctl exec` injects a secret into a child
   process's environment and masks the value (and any 6+ character fragment) in
   its stdout/stderr, so it never reaches an agent's context, a transcript, or a
