@@ -1,6 +1,6 @@
 # HTTP API and sessions
 
-`vaultctl-web` is a browser client for the `vaultctl` API. By default, API calls use same-origin `/api/*` URLs. In development Vite proxies them to `http://127.0.0.1:8787`; in production `serve.py` proxies them to `VAULT_URL`.
+`vaultctl/web` is a browser client for the `vaultctl` API. By default, API calls use same-origin `/api/*` URLs. In development Vite proxies them to `http://127.0.0.1:8787`; in production `serve.py` proxies them to `VAULT_URL`.
 
 All API responses are JSON. Error responses commonly include an `error` string. Exact authorization and validation errors are returned by the backend.
 

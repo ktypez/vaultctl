@@ -14,4 +14,7 @@ sessions.json
 vaultctl/opentui/node_modules/
 vaultctl/opentui/__pycache__/
 
+vaultctl/web/node_modules/
+vaultctl/web/dist/
+
 # Agent skills are source documentation; do not ignore skills/SKILL.md

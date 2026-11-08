@@ -3,7 +3,6 @@
   import { unlocked, csrf } from '../lib/stores.js';
 
   let password = $state('');
-  let remember = $state(false);
   let error = $state('');
   let loading = $state(false);
   let showPw = $state(false);
@@ -11,7 +10,7 @@
   async function submit() {
     error = '';
     loading = true;
-    const r = await api('/api/unlock', 'POST', { password, remember });
+    const r = await api('/api/unlock', 'POST', { password });
     loading = false;
     if (r.ok) {
       $csrf = r.data.csrf;
@@ -36,7 +35,6 @@
         <button type="button" class="pw-toggle" onclick={() => (showPw = !showPw)}>{showPw ? 'hide' : 'show'}</button>
       </div>
     </div>
-    <label class="remember"><input type="checkbox" bind:checked={remember} />Remember me (30 days)</label>
     <button class="btn cta" disabled={loading} onclick={submit}>Unlock</button>
     {#if error}<div class="err-msg">{error}</div>{/if}
   </div>

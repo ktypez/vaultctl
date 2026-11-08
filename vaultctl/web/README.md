@@ -1,4 +1,4 @@
-# vaultctl-web
+# vaultctl web
 
 A Svelte 5 single-page web interface for the `vaultctl` encrypted credentials vault. The UI is optional; the vault backend and CLI can run without it.
 
@@ -35,18 +35,19 @@ After building, run:
 python3 serve.py
 ```
 
-The server serves `dist/` on `0.0.0.0:8788` by default and proxies `/api/*` to the backend. Set `PORT` and `VAULT_URL` to change those values:
+The server serves `dist/` on `127.0.0.1:8788` by default and proxies `/api/*` to the backend. Set `PORT` and `VAULT_URL` to change those values:
 
 ```sh
 PORT=8788 VAULT_URL=http://127.0.0.1:8787 python3 serve.py
 ```
 
-The server binds to all network interfaces. Restrict access with a firewall and/or a private-network reverse proxy; see [deployment](docs/deployment.md). For the deployed same-origin setup, leave `VITE_VAULT_URL` unset so the browser sends API requests through `serve.py`.
+The server binds to loopback by default. Put it behind a trusted HTTPS reverse proxy or expose it only through a private VPN; see [deployment](docs/deployment.md). Set `HOST=0.0.0.0` only when you intentionally need LAN binding and have firewall/TLS controls. For the deployed same-origin setup, leave `VITE_VAULT_URL` unset so the browser sends API requests through `serve.py`.
 
 ## Configuration
 
 | Variable | Used by | Default | Purpose |
 |---|---|---|---|
+| `HOST` | `serve.py` | `127.0.0.1` | Listen address |
 | `PORT` | `serve.py` | `8788` | Frontend listen port |
 | `VAULT_URL` | `serve.py` | `http://127.0.0.1:8787` | Backend target for `/api/*` proxy requests |
 | `VITE_VAULT_URL` | Vite build | empty | Optional absolute API base URL in the browser. Leave empty when using the same-origin production proxy. |

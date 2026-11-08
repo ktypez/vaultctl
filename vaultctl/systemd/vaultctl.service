@@ -4,10 +4,18 @@ After=network.target
 
 [Service]
 Type=simple
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/admin/.local/share/vaultctl/data
 User=admin
 Group=admin
 WorkingDirectory=/home/admin/.local/share/vaultctl
-Environment="VAULT_HOST=0.0.0.0"
+Environment="VAULT_HOST=127.0.0.1"
+# Set to 1 only when browsers reach the vault through HTTPS.
+Environment="VAULT_COOKIE_SECURE=0"
 Environment="VAULT_PORT=8787"
 Environment="VAULT_DATA_DIR=/home/admin/.local/share/vaultctl/data"
 ExecStart=/home/admin/.local/share/vaultctl/venv/bin/python /home/admin/.local/share/vaultctl/app.py

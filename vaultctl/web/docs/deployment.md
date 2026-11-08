@@ -12,7 +12,7 @@ npm run build
 Then start the static server and API proxy:
 
 ```sh
-PORT=8788 VAULT_URL=http://127.0.0.1:8787 python3 serve.py
+HOST=127.0.0.1 PORT=8788 VAULT_URL=http://127.0.0.1:8787 python3 serve.py
 ```
 
 `serve.py` requires an existing `dist/` directory, serves it on `0.0.0.0:$PORT`, and forwards `/api/*` requests to `VAULT_URL`. Defaults are port `8788` and backend `http://127.0.0.1:8787`. The backend must be running and reachable. The browser should use same-origin API paths; leave `VITE_VAULT_URL` unset for this setup.

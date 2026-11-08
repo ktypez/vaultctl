@@ -43,7 +43,11 @@ from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 # --------------------------------------------------------------------------- #
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.environ.get("VAULT_DATA_DIR", BASE_DIR)
-os.makedirs(DATA_DIR, exist_ok=True)
+os.makedirs(DATA_DIR, mode=0o700, exist_ok=True)
+try:
+    os.chmod(DATA_DIR, 0o700)
+except OSError:
+    pass
 VAULT_PATH = os.path.join(DATA_DIR, "credentials.enc")
 
 HOST = os.environ.get("VAULT_HOST", "127.0.0.1")
@@ -55,11 +59,11 @@ SALT_LEN = 16
 NONCE_LEN = 12
 
 SESSION_TTL = int(os.environ.get("VAULT_SESSION_TTL", str(30 * 60)))  # seconds
-REMEMBER_TTL = int(os.environ.get("VAULT_REMEMBER_TTL", str(30 * 24 * 60 * 60)))  # 30 days
 COOKIE_NAME = "sid"
 SESSIONS_FILE = os.path.join(DATA_DIR, "sessions.json")
 AUDIT_PATH = os.path.join(DATA_DIR, "audit.jsonl")
 AUDIT_MAX_READ = 1000
+COOKIE_SECURE = os.environ.get("VAULT_COOKIE_SECURE", "0").lower() in ("1", "true", "yes")
 
 # Brand assets (generated via E2B + Pillow; see assets/). Embedded as
 # data URIs so the single-file app stays self-contained.
@@ -86,7 +90,7 @@ app.config.update(
 _sessions = {}          # token -> {key, expires, csrf}
 _sessions_lock = threading.Lock()
 
-_fail = {"count": 0, "reset_at": 0.0}
+_fail = {"count": 0, "reset_at": 0.0, "blocked_until": 0.0}
 _fail_lock = threading.Lock()
 
 
@@ -126,69 +130,34 @@ def load_vault() -> dict:
 
 
 def save_vault(data: dict) -> None:
+    # Create the temporary file with restrictive permissions before writing.
     tmp = VAULT_PATH + ".tmp"
-    with open(tmp, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2)
-    os.replace(tmp, VAULT_PATH)
+    fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
     try:
-        os.chmod(VAULT_PATH, 0o600)
-    except OSError:
-        pass
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp, VAULT_PATH)
+        try:
+            dfd = os.open(DATA_DIR, os.O_RDONLY)
+            try:
+                os.fsync(dfd)
+            finally:
+                os.close(dfd)
+        except OSError:
+            pass
+    finally:
+        try:
+            if os.path.exists(tmp):
+                os.unlink(tmp)
+        except OSError:
+            pass
 
 
 # --------------------------------------------------------------------------- #
 # Session helpers
 # --------------------------------------------------------------------------- #
-def _save_sessions():
-    """Persist sessions to disk (0600) so they survive restarts."""
-    try:
-        with _sessions_lock:
-            data = {}
-            for tok, s in _sessions.items():
-                data[tok] = {
-                    "key": s["key"].hex(),
-                    "expires": s["expires"],
-                    "csrf": s["csrf"],
-                    "remember": s.get("remember", False),
-                }
-        tmp = SESSIONS_FILE + ".tmp"
-        with open(tmp, "w", encoding="utf-8") as f:
-            json.dump(data, f)
-        os.replace(tmp, SESSIONS_FILE)
-        try:
-            os.chmod(SESSIONS_FILE, 0o600)
-        except OSError:
-            pass
-    except Exception:
-        pass
-
-
-def _load_sessions():
-    """Load persisted sessions from disk on startup."""
-    if not os.path.exists(SESSIONS_FILE):
-        return
-    try:
-        with open(SESSIONS_FILE, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        now = time.time()
-        with _sessions_lock:
-            for tok, s in data.items():
-                try:
-                    exp = s["expires"]
-                    if exp < now:
-                        continue
-                    _sessions[tok] = {
-                        "key": bytes.fromhex(s["key"]),
-                        "expires": exp,
-                        "csrf": s["csrf"],
-                        "remember": s.get("remember", False),
-                    }
-                except Exception:
-                    continue
-    except Exception:
-        pass
-
-
 def get_session():
     """Return (token, session) for a valid, unexpired session, else (None, None)."""
     token = request.cookies.get(COOKIE_NAME)
@@ -200,9 +169,8 @@ def get_session():
             return None, None
         if s["expires"] < time.time():
             _sessions.pop(token, None)
-            _save_sessions()
             return None, None
-        s["expires"] = time.time() + (REMEMBER_TTL if s.get("remember") else SESSION_TTL)
+        s["expires"] = time.time() + SESSION_TTL
         return token, s
 
 
@@ -225,59 +193,61 @@ def auth():
     return token, s, None
 
 
-def new_session(key: bytes, remember: bool = False) -> tuple:
-    ttl = REMEMBER_TTL if remember else SESSION_TTL
+def new_session(key: bytes) -> tuple:
     token = secrets.token_urlsafe(32)
     with _sessions_lock:
         _sessions[token] = {
             "key": key,
-            "expires": time.time() + ttl,
+            "expires": time.time() + SESSION_TTL,
             "csrf": secrets.token_urlsafe(24),
-            "remember": remember,
         }
         csrf = _sessions[token]["csrf"]
-    _save_sessions()
     return token, csrf
 
 
 def destroy_session(token: str) -> None:
     with _sessions_lock:
         _sessions.pop(token, None)
-    _save_sessions()
 
 
-def set_unlock_cookie(resp, token: str, remember: bool = False):
-    ttl = REMEMBER_TTL if remember else SESSION_TTL
+def set_unlock_cookie(resp, token: str):
+    # Browser session cookie; in-memory server expiry is authoritative.
     resp.set_cookie(
         COOKIE_NAME, token,
-        httponly=True, samesite="Lax", secure=False,
-        max_age=ttl, path="/",
+        httponly=True, samesite="Lax", secure=COOKIE_SECURE,
+        path="/",
     )
     return resp
 
 
-def _bruteforce_delay():
-    """Sleep longer as consecutive failures accumulate."""
+def _bruteforce_delay() -> int:
+    """Return a Retry-After value instead of sleeping inside a request thread."""
     with _fail_lock:
         now = time.time()
-        if now >= _fail["reset_at"]:
+        if now >= _fail["reset_at"] and now >= _fail["blocked_until"]:
             _fail["count"] = 0
-        count = _fail["count"]
-        if count >= MAX_FAIL_BEFORE_DELAY:
-            d = min(DELAY_CAP, 0.5 * (2 ** (count - MAX_FAIL_BEFORE_DELAY)))
-            time.sleep(d)
+            _fail["blocked_until"] = 0.0
+        remaining = _fail["blocked_until"] - now
+        return max(0, int(remaining + 0.999))
 
 
 def _record_failure():
     with _fail_lock:
+        now = time.time()
+        if now >= _fail["reset_at"] and now >= _fail["blocked_until"]:
+            _fail["count"] = 0
         _fail["count"] += 1
-        _fail["reset_at"] = time.time() + 60  # window resets after 60s
+        _fail["reset_at"] = now + 60
+        if _fail["count"] >= MAX_FAIL_BEFORE_DELAY:
+            delay = min(60.0, 5.0 * (2 ** (_fail["count"] - MAX_FAIL_BEFORE_DELAY)))
+            _fail["blocked_until"] = max(_fail["blocked_until"], now + delay)
 
 
 def _record_success():
     with _fail_lock:
         _fail["count"] = 0
         _fail["reset_at"] = 0.0
+        _fail["blocked_until"] = 0.0
 
 
 # ---------------------------------------------------------------------------
@@ -393,11 +363,12 @@ def api_setup():
 def api_unlock():
     if not vault_exists():
         return jsonify({"error": "Vault not initialized"}), 400
-    _bruteforce_delay()
+    retry_after = _bruteforce_delay()
+    if retry_after:
+        return jsonify({"error": "Too many failed unlock attempts. Try again later."}), 429, {"Retry-After": str(retry_after)}
 
     data = request.json or {}
     password = data.get("password", "")
-    remember = bool(data.get("remember", False))
     vault = load_vault()
     salt = bytes.fromhex(vault["salt"])
     try:
@@ -414,10 +385,10 @@ def api_unlock():
         return jsonify({"error": "Incorrect master password"}), 401
 
     _record_success()
-    token, csrf = new_session(key, remember=remember)
+    token, csrf = new_session(key)
     resp = jsonify({"ok": True, "csrf": csrf})
     audit("unlock", "*", "allow", "ok")
-    return set_unlock_cookie(resp, token, remember=remember)
+    return set_unlock_cookie(resp, token)
 
 
 @app.post("/api/lock")
@@ -582,7 +553,14 @@ def _mna(_e):
 
 # --------------------------------------------------------------------------- #
 # Load persisted sessions (remember-me) on startup
-_load_sessions()
+# Remove legacy sessions.json files: older versions stored derived keys there.
+# Sessions are now process-memory-only, so a restart always locks the vault.
+try:
+    os.remove(SESSIONS_FILE)
+except FileNotFoundError:
+    pass
+except OSError:
+    app.logger.warning("Could not remove legacy session file: %s", SESSIONS_FILE)
 
 if __name__ == "__main__":
     print(f"vaultctl on http://{HOST}:{PORT}  (vault: {VAULT_PATH})")
