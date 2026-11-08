@@ -1,46 +1,65 @@
-# vaultctl-web — Svelte Web UI for vaultctl (optional)
+# vaultctl-web
 
-A pure SPA (Svelte + Vite) front-end for the vaultctl credentials vault. Optional — not required; vaultctl CLI / TUI cover everything headlessly.
+A Svelte 5 single-page web interface for the `vaultctl` encrypted credentials vault. The UI is optional; the vault backend and CLI can run without it.
 
-## Development
+The interface includes master-password setup and unlock, masked/revealable secrets, search, copy and delete, password management, an audit log, and light/dark themes. Its visual system follows DATA Ledger V5 Paper Pop: warm dotted paper, rounded cards, sticker-like outlines and hard shadows, with responsive layouts.
 
-```bash
+## Requirements
+
+- Node.js and npm (for development/build)
+- Python 3 (for the static server)
+- A running `vaultctl` API, default `http://127.0.0.1:8787`
+
+## Quick start
+
+```sh
 npm install
 npm run dev
 ```
 
-Vite dev server runs on http://127.0.0.1:5173 and proxies `/api/*` to the
-vault backend (default http://127.0.0.1:8787). Configure the backend URL via
-`VITE_VAULT_URL`.
+Open the Vite address shown in the terminal (normally `http://localhost:5173`). The Vite dev server proxies `/api/*` to `http://127.0.0.1:8787`; start the backend first. That proxy target is configured in `vite.config.js`.
 
-Make sure the vaultctl backend is running on port 8787 (or point
-`VITE_VAULT_URL` at it).
+Build the static site:
 
-## Build
-
-```bash
+```sh
 npm run build
 ```
 
-Output goes to `dist/`.
+Vite writes production assets to `dist/`.
 
-## Run (production)
+## Run the production server
 
-```bash
+After building, run:
+
+```sh
 python3 serve.py
 ```
 
-Serves `dist/` on `PORT` (default 8788) and proxies `/api/*` to `VAULT_URL`
-(default http://127.0.0.1:8787).
+The server serves `dist/` on `0.0.0.0:8788` by default and proxies `/api/*` to the backend. Set `PORT` and `VAULT_URL` to change those values:
 
-## Environment
+```sh
+PORT=8788 VAULT_URL=http://127.0.0.1:8787 python3 serve.py
+```
 
-- `VITE_VAULT_URL` — base URL for the vault API (build-time, Vite).
-- `PORT` — frontend listen port for `serve.py` (default 8788).
-- `VAULT_URL` — backend URL proxied by `serve.py` (default http://127.0.0.1:8787).
+The server binds to all network interfaces. Restrict access with a firewall and/or a private-network reverse proxy; see [deployment](docs/deployment.md). For the deployed same-origin setup, leave `VITE_VAULT_URL` unset so the browser sends API requests through `serve.py`.
 
-## Theme
+## Configuration
 
-Light/dark theme persisted in `localStorage` and toggled via `data-theme` on
-`<html>`. Google Fonts (Fraunces, Inter, JetBrains Mono) loaded from
-`index.html`.
+| Variable | Used by | Default | Purpose |
+|---|---|---|---|
+| `PORT` | `serve.py` | `8788` | Frontend listen port |
+| `VAULT_URL` | `serve.py` | `http://127.0.0.1:8787` | Backend target for `/api/*` proxy requests |
+| `VITE_VAULT_URL` | Vite build | empty | Optional absolute API base URL in the browser. Leave empty when using the same-origin production proxy. |
+
+The Vite dev/preview proxy target is set separately in `vite.config.js` and currently points to `http://127.0.0.1:8787`.
+
+## Documentation
+
+- [Development and project layout](docs/development.md)
+- [HTTP API and session flow](docs/api.md)
+- [Production deployment and systemd](docs/deployment.md)
+- [Security notes and operational precautions](docs/security.md)
+
+## Project status
+
+The checked-in systemd example is `systemd/vaultweb.service`; it expects this repository at `/home/admin/projects/vaultctl/vaultctl-web` and serves port `8788`. Adjust paths, account, and backend URL before using it elsewhere. Build the frontend again after changing source files, then restart the service to load the new `dist/` assets.
