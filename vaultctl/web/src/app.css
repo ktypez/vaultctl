@@ -348,3 +348,94 @@ body::before { content:""; position:fixed; inset:0; z-index:-1; pointer-events:n
   .auth-card { padding:25px 20px; }
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+
+
+/* Calm, minimal professional finish: preserve the existing layout and behavior. */
+:root {
+  --bg: #f5f7f8;
+  --bg2: #eef2f4;
+  --surface: #ffffff;
+  --ink: #17232c;
+  --muted: #5f6d77;
+  --muted-2: #84919a;
+  --line: #d9e1e6;
+  --line-soft: #e9eef1;
+  --accent: #176b60;
+  --accent-soft: rgba(23, 107, 96, .09);
+  --ok: #176b60;
+  --err: #b42318;
+  --hard: #d9e1e6;
+  --pop: #6f8791;
+  --danger: #b42318;
+  --radius: 14px;
+  --radius-sm: 10px;
+  --radius-xs: 7px;
+  --shadow-xs: 0 1px 2px rgba(16, 24, 40, .04);
+  --shadow-sm: 0 2px 8px rgba(16, 24, 40, .05);
+  --shadow: 0 8px 24px rgba(16, 24, 40, .07);
+  --shadow-lg: 0 16px 40px rgba(16, 24, 40, .10);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+html[data-theme='dark'] {
+  --bg: #101619;
+  --bg2: #172126;
+  --surface: #151e23;
+  --ink: #e8eef0;
+  --muted: #a0adb4;
+  --muted-2: #78868e;
+  --line: #2c3a40;
+  --line-soft: #233138;
+  --accent: #67c5b4;
+  --accent-soft: rgba(103, 197, 180, .12);
+  --ok: #67c5b4;
+  --err: #ff938a;
+  --hard: #2c3a40;
+  --pop: #8da4ac;
+  --danger: #ff938a;
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, .12);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, .16);
+  --shadow: 0 8px 24px rgba(0, 0, 0, .20);
+  --shadow-lg: 0 16px 40px rgba(0, 0, 0, .26);
+}
+body::before { display: none; }
+.topbar { background: var(--surface); backdrop-filter: none; border-bottom: 1px solid var(--line); }
+.topbar .inner { max-width: 1120px; min-height: 64px; padding: 12px 24px; }
+.seal { transform: none; border: 1px solid var(--line); border-radius: 10px; box-shadow: none; }
+.name { text-transform: none; letter-spacing: -.01em; }
+.name .jp { letter-spacing: .04em; }
+.status { border-radius: 999px; padding: 7px 10px; }
+.ghost, .btn { border-radius: 9px; }
+.page { max-width: 1120px; padding-top: 30px; }
+.page-heading { margin-bottom: 20px; }
+.title-line h1 { letter-spacing: -.035em; font-weight: 700; }
+.count-sticker { transform: none; border-radius: 9px; box-shadow: none; }
+.squiggle { display: none; }
+.btn.cta { border: 1px solid var(--accent); border-radius: 9px; box-shadow: none; }
+.btn.cta:hover { transform: none; background: color-mix(in srgb, var(--accent) 88%, #000); border-color: var(--accent); box-shadow: none; }
+.vault-summary { border-radius: 12px; box-shadow: var(--shadow-xs); }
+.aside-card, .settings-card, .auth-card, .modal-card {
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  box-shadow: var(--shadow-sm);
+}
+.aside-card { padding: 16px; }
+.seal-graphic, .empty-sticker, .auth-stamp {
+  transform: none;
+  border-radius: 12px;
+  box-shadow: none;
+}
+.auth::before { display: none; }
+.auth-card { padding: 30px; }
+.auth-floater { display: none; }
+.auth-card .input, .modal-card .input { border-radius: 9px; }
+.input { border-radius: 9px; }
+.input:focus { box-shadow: 0 0 0 3px var(--accent-soft); }
+.row, .list { border-radius: 0; }
+.row:hover { box-shadow: inset 2px 0 var(--accent); }
+.modal-card { box-shadow: var(--shadow-lg); }
+.toast { border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow); }
+@media (max-width: 700px) {
+  .topbar .inner { padding: 10px 14px; }
+  .page { padding: 22px 14px 40px; }
+  .auth-card { padding: 24px 20px; }
+}
