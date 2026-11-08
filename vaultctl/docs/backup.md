@@ -65,8 +65,11 @@ Environment overrides: `VAULTCTL_BIN_DIR`, `VAULTCTL_USER_UNIT_DIR`,
 `VAULTCTL_BACKUP_REPO` (default `ktypez/vaultctl-db-backup`),
 `VAULTCTL_SRC_RAW_BASE`.
 
-An agent can install and operate this end to end with the bundled skill
-(`skills/vaultctl-backup/SKILL.md`) — see [Agent skill](#agent-skill) below.
+The installer also copies the bundled Agent Skills-format directory
+(`skills/vaultctl-backup/`) to common user-level skill paths for Hermes, Claude
+Code, Codex, Gemini CLI, Cursor, and OpenCode, including `~/.agents/skills/`.
+Set `VAULTCTL_AGENT_SKILLS_DIRS` to a colon-separated list of destination skill
+roots. See [Agent skill](#agent-skill) below.
 
 ## What the installer writes
 
@@ -128,12 +131,21 @@ paths, no embedded secrets) covering install, operation, and restore of this
 backup. Install it into an agent's skills directory to let that agent operate the
 backup safely:
 
+This uses the open Agent Skills `SKILL.md` directory format, shared by multiple
+agent tools. By default, the installer copies the skill into common user-level
+directories, including Hermes, `~/.agents/skills/`, Claude Code, Cursor, and
+OpenCode. Gemini CLI and other compatible clients can discover the shared
+`~/.agents/skills/` copy.
+
+To target only a specific tool/profile, set the destination roots explicitly:
+
 ```bash
-# Hermes Agent
-cp -r skills/vaultctl-backup ~/.hermes/profiles/<profile>/skills/
-# Claude Code / other SKILL.md agents
-cp -r skills/vaultctl-backup ~/.claude/skills/
+VAULTCTL_AGENT_SKILLS_DIRS="$HOME/.hermes/profiles/<profile>/skills:$HOME/.claude/skills" \
+  ./vaultctl/install-backup.sh
 ```
+
+The repository copy is portable and can also be manually copied into any other
+agent's configured skill directory.
 
 ## Security notes
 

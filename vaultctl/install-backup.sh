@@ -17,6 +17,7 @@
 #   VAULTCTL_BACKUP_CONFIG_DIR  default: $HOME/.config/vaultctl-db-backup
 #   VAULTCTL_BACKUP_REPO        default: ktypez/vaultctl-db-backup
 #   VAULTCTL_SRC_RAW_BASE       raw URL base used when run without siblings
+#   VAULTCTL_AGENT_SKILLS_DIRS   colon-separated Agent Skills destination roots
 set -Eeuo pipefail
 umask 077
 
@@ -26,6 +27,9 @@ UNIT_DIR="${VAULTCTL_USER_UNIT_DIR:-$HOME/.config/systemd/user}"
 CFG_DIR="${VAULTCTL_BACKUP_CONFIG_DIR:-$HOME/.config/vaultctl-db-backup}"
 BACKUP_REPO="${VAULTCTL_BACKUP_REPO:-ktypez/vaultctl-db-backup}"
 RAW_BASE="${VAULTCTL_SRC_RAW_BASE:-https://raw.githubusercontent.com/ktypez/vaultctl/master/vaultctl}"
+SKILL_RAW_URL="${VAULTCTL_SKILL_RAW_URL:-https://raw.githubusercontent.com/ktypez/vaultctl/master/skills/vaultctl-backup/SKILL.md}"
+AGENT_SKILLS_DIRS="${VAULTCTL_AGENT_SKILLS_DIRS:-${HERMES_HOME:-$HOME/.hermes}/skills:$HOME/.agents/skills:$HOME/.claude/skills:$HOME/.codex/skills:$HOME/.gemini/skills:$HOME/.cursor/skills:$HOME/.config/opencode/skills}"
+IFS=: read -r -a SKILL_ROOTS <<< "$AGENT_SKILLS_DIRS"
 PASSFILE="$CFG_DIR/encryption-passphrase"
 
 DRY_RUN=0 NO_ENABLE=0 VERIFY=0 REQUIRE_GH=0
@@ -50,7 +54,8 @@ Options:
   -h, --help    show this help
 
 Environment overrides: VAULTCTL_BIN_DIR, VAULTCTL_USER_UNIT_DIR,
-VAULTCTL_BACKUP_CONFIG_DIR, VAULTCTL_BACKUP_REPO, VAULTCTL_SRC_RAW_BASE.
+VAULTCTL_BACKUP_CONFIG_DIR, VAULTCTL_BACKUP_REPO, VAULTCTL_SRC_RAW_BASE,
+VAULTCTL_AGENT_SKILLS_DIRS (colon-separated), VAULTCTL_SKILL_RAW_URL.
 EOF
 }
 
@@ -84,6 +89,60 @@ install_artifact() { # rel source-path, dest, mode
   fi
 }
 
+install_skill() {
+  local src="$SELF_DIR/../skills/vaultctl-backup/SKILL.md" tmp="" root
+  if [[ ! -f "$src" ]]; then
+    if (( DRY_RUN )); then
+      say "  [dry-run] curl -fsSL $SKILL_RAW_URL -o <tmp>"
+      for root in "${SKILL_ROOTS[@]}"; do
+        [[ -n "$root" ]] && say "  [dry-run] install -D -m 0644 <tmp> $root/vaultctl-backup/SKILL.md"
+      done
+      return 0
+    fi
+    tmp="$(mktemp)"
+    trap 'rm -f -- "$tmp"' RETURN
+    curl -fsSL "$SKILL_RAW_URL" -o "$tmp" || die "could not fetch agent skill from $SKILL_RAW_URL"
+    src="$tmp"
+  fi
+
+  for root in "${SKILL_ROOTS[@]}"; do
+    [[ -n "$root" ]] || continue
+    run install -D -m 0644 -- "$src" "$root/vaultctl-backup/SKILL.md"
+    say "Agent skill: $root/vaultctl-backup/SKILL.md"
+  done
+  if [[ "$src" == "$tmp" ]]; then
+    rm -f -- "$tmp"
+    trap - RETURN
+  fi
+}
+
+skill_locations() {
+  local root
+  for root in "${SKILL_ROOTS[@]}"; do
+    [[ -n "$root" ]] && printf '%s/vaultctl-backup/SKILL.md\n' "$root"
+  done
+}
+
+report_skill_status() {
+  local root path found=0
+  while IFS= read -r path; do
+    [[ -n "$path" ]] || continue
+    if [[ -s "$path" ]]; then
+      report "$path" ok
+      found=1
+    else
+      report "$path missing" no
+    fi
+  done < <(skill_locations)
+  return "$(( ! found ))"
+}
+
+display_skill_targets() {
+  local root
+  for root in "${SKILL_ROOTS[@]}"; do
+    [[ -n "$root" ]] && say "  Agent skill: $root/vaultctl-backup/SKILL.md"
+  done
+}
 check_deps() {
   local missing=() c
   for c in bash curl install gh git gpg flock python3 stat; do
@@ -107,6 +166,18 @@ if (( VERIFY )); then
   for u in "${UNIT_NAMES[@]}"; do
     [[ -f "$UNIT_DIR/$u" ]] && report "$UNIT_DIR/$u" ok || report "$UNIT_DIR/$u missing" no
   done
+  if [[ -n "${VAULTCTL_AGENT_SKILLS_DIRS:-}" ]]; then
+    report_skill_status || rc=1
+  else
+    skill_found=0
+    for root in "${SKILL_ROOTS[@]}"; do
+      if [[ -s "$root/vaultctl-backup/SKILL.md" ]]; then
+        report "$root/vaultctl-backup/SKILL.md" ok
+        skill_found=1
+      fi
+    done
+    (( skill_found )) || { report "no Agent Skills copy found" no; rc=1; }
+  fi
   if [[ -s "$PASSFILE" && "$(stat -c '%a' "$PASSFILE")" == 600 ]]; then
     report "$PASSFILE (mode 0600)" ok
   else
@@ -129,6 +200,7 @@ if (( DRY_RUN )); then
   say "  binary  : $BIN_DIR/vaultctl-db-backup"
   say "  units   : $UNIT_DIR/${UNIT_NAMES[*]}"
   say "  passphrase: $PASSFILE (generated if absent; never printed)"
+  display_skill_targets
   say "  repo    : $BACKUP_REPO (verified private at backup time)"
   [[ -f "$PASSFILE" ]] && say "  passphrase: already present" || say "  passphrase: would be generated"
   say "  timer   : $([[ $NO_ENABLE == 1 ]] && echo 'installed only' || echo 'enable --now')"
@@ -139,6 +211,7 @@ run mkdir -p -- "$BIN_DIR" "$UNIT_DIR" "$CFG_DIR"
 install_artifact 'vaultctl-db-backup' "$BIN_DIR/vaultctl-db-backup" 700
 install_artifact 'systemd/vaultctl-db-backup.service' "$UNIT_DIR/vaultctl-db-backup.service" 644
 install_artifact 'systemd/vaultctl-db-backup.timer' "$UNIT_DIR/vaultctl-db-backup.timer" 644
+install_skill
 
 # Envelope passphrase: create once at mode 0600, report by path only.
 if [[ ! -s "$PASSFILE" ]]; then

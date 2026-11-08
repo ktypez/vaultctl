@@ -1,7 +1,5 @@
 <div align="center">
 
-<p align="center"><img src="vaultctl/assets/logo.png" width="96" alt="vaultctl"></p>
-
 # 🔐 vaultctl
 
 **A zero-knowledge, password-gated credentials vault for your local network.**
@@ -253,10 +251,18 @@ curl -fsSL https://raw.githubusercontent.com/ktypez/vaultctl/master/vaultctl/ins
 From a checkout:
 
 ```bash
-./vaultctl/install-backup.sh          # install engine + weekly user timer
-./vaultctl/install-backup.sh --dry-run    # show actions, change nothing
-./vaultctl/install-backup.sh --verify     # check an existing installation
+./vaultctl/install-backup.sh             # install engine, weekly timer, and agent skill
+./vaultctl/install-backup.sh --dry-run   # show actions, change nothing
+./vaultctl/install-backup.sh --verify    # check an existing installation (including skill)
 ```
+
+The skill uses the portable Agent Skills `SKILL.md` format. The installer copies
+it to common user-level skill directories for Hermes, Claude Code, Codex, Gemini
+CLI, Cursor, and OpenCode (including the shared `~/.agents/skills/` location).
+Override the colon-separated destinations with `VAULTCTL_AGENT_SKILLS_DIRS`, or
+set `HERMES_HOME` when targeting a specific Hermes profile. Other agents that
+support the same format can use the repository's `skills/vaultctl-backup/`
+folder or any configured skills directory.
 
 Step by step:
 
