@@ -1,0 +1,112 @@
+"""Regression tests for vault session key handling.
+
+Run with: python -m unittest discover -s tests
+"""
+import os
+import tempfile
+import unittest
+
+from vaultctl import app as vault
+
+
+class SessionSecurityTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.old = {
+            "DATA_DIR": vault.DATA_DIR,
+            "VAULT_PATH": vault.VAULT_PATH,
+            "SESSIONS_FILE": vault.SESSIONS_FILE,
+            "AUDIT_PATH": vault.AUDIT_PATH,
+            "ITERATIONS": vault.ITERATIONS,
+            "COOKIE_SECURE": vault.COOKIE_SECURE,
+        }
+        vault.DATA_DIR = self.tmp.name
+        vault.VAULT_PATH = os.path.join(self.tmp.name, "credentials.enc")
+        vault.SESSIONS_FILE = os.path.join(self.tmp.name, "sessions.json")
+        vault.AUDIT_PATH = os.path.join(self.tmp.name, "audit.jsonl")
+        vault.ITERATIONS = 1_000
+        vault.COOKIE_SECURE = True
+        vault._sessions.clear()
+        vault._fail.update({"count": 0, "reset_at": 0.0, "blocked_until": 0.0})
+        self.client = vault.app.test_client()
+
+    def tearDown(self):
+        vault._sessions.clear()
+        for name, value in self.old.items():
+            setattr(vault, name, value)
+        self.tmp.cleanup()
+
+    def test_derived_session_key_is_never_persisted(self):
+        response = self.client.post(
+            "/api/setup",
+            json={"password": "correct horse battery staple", "confirm": "correct horse battery staple"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Secure", response.headers.get("Set-Cookie", ""))
+        self.assertFalse(os.path.exists(vault.SESSIONS_FILE))
+
+    def test_unlock_rate_limit_returns_retry_after(self):
+        self.client.post(
+            "/api/setup",
+            json={"password": "correct horse battery staple", "confirm": "correct horse battery staple"},
+        )
+        for _ in range(vault.MAX_FAIL_BEFORE_DELAY):
+            response = self.client.post("/api/unlock", json={"password": "wrong password"})
+            self.assertEqual(response.status_code, 401)
+        limited = self.client.post("/api/unlock", json={"password": "wrong password"})
+        self.assertEqual(limited.status_code, 429)
+        self.assertGreaterEqual(int(limited.headers["Retry-After"]), 1)
+
+    def test_password_rotation_revokes_other_sessions(self):
+        primary = self.client.post(
+            "/api/setup",
+            json={"password": "correct horse battery staple", "confirm": "correct horse battery staple"},
+        )
+        self.assertEqual(primary.status_code, 200)
+        csrf = primary.get_json()["csrf"]
+
+        second_client = vault.app.test_client()
+        unlocked = second_client.post(
+            "/api/unlock",
+            json={"password": "correct horse battery staple"},
+        )
+        self.assertEqual(unlocked.status_code, 200)
+        self.assertEqual(len(vault._sessions), 2)
+
+        changed = self.client.post(
+            "/api/change-password",
+            headers={"X-CSRF-Token": csrf},
+            json={
+                "current": "correct horse battery staple",
+                "new": "a much stronger replacement password",
+                "confirm": "a much stronger replacement password",
+            },
+        )
+        self.assertEqual(changed.status_code, 200)
+        self.assertEqual(len(vault._sessions), 1)
+        self.assertEqual(second_client.get("/api/entries").status_code, 401)
+
+        replacement_client = vault.app.test_client()
+        replacement = replacement_client.post(
+            "/api/unlock",
+            json={"password": "a much stronger replacement password"},
+        )
+        self.assertEqual(replacement.status_code, 200)
+
+    def test_restart_invalidates_existing_session(self):
+        response = self.client.post(
+            "/api/setup",
+            json={"password": "correct horse battery staple", "confirm": "correct horse battery staple"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(vault._sessions)
+
+        # A process restart starts with an empty in-memory session map.
+        vault._sessions.clear()
+        status = self.client.get("/api/status")
+        self.assertEqual(status.status_code, 200)
+        self.assertFalse(status.get_json()["unlocked"])
+
+
+if __name__ == "__main__":
+    unittest.main()

@@ -86,7 +86,7 @@
     <button class="btn cta" style="width:100%" disabled={loading} onclick={changePw}>Change password</button>
 
     <div class="label" style="margin:28px 0 12px">Session</div>
-    <p class="sub" style="margin-bottom:16px">Sessions persist across restarts. Tick "Remember me" on the unlock screen to stay signed in for 30 days.</p>
+    <p class="sub" style="margin-bottom:16px">Sessions are held in memory only and expire after 30 minutes of inactivity. Restarting the service locks the vault.</p>
     <button class="btn danger" style="width:100%" onclick={lock}>Lock vault</button>
     <div style="margin-top:14px"><button class="btn ghost sm" onclick={() => (window.location.hash = '')}>← Back to vault</button></div>
   </div>

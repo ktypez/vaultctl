@@ -27,7 +27,6 @@
 
   let showUnlockPw = $state(false);
   let unlockPw = $state('');
-  let remember = $state(false);
   let unlockErr = $state('');
 
   // add modal
@@ -102,7 +101,7 @@
 
   async function doUnlock() {
     unlockErr = '';
-    const r = await api('/api/unlock', 'POST', { password: unlockPw, remember });
+    const r = await api('/api/unlock', 'POST', { password: unlockPw });
     if (r.ok) {
       if (r.data && r.data.csrf) setCsrf(r.data.csrf);
       unlocked = true;
@@ -314,7 +313,6 @@
             <button type="button" class="pw" onclick={() => (showUnlockPw = !showUnlockPw)}>{showUnlockPw ? 'hide' : 'show'}</button>
           </div>
         </div>
-        <label class="remember"><input type="checkbox" bind:checked={remember} />Remember me (30 days)</label>
         <button class="btn cta" onclick={doUnlock}>Unlock</button>
         {#if unlockErr}<div class="err">{unlockErr}</div>{/if}
       </div>

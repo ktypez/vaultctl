@@ -1,4 +1,4 @@
-# vaultctl-web — current implementation specification
+# vaultctl/web — current implementation specification
 
 This document describes the current frontend. It supersedes the original scaffold prompt that used to be stored here. For setup and operations, start at [README.md](README.md).
 

@@ -18,7 +18,7 @@ PBKDF2-derived keys, nothing leaves your machine.
 This is a monorepo with two components:
 
 - `vaultctl/` — **credentials vault backend** (Flask API, encrypted store, `vaultctl` CLI). Service: `vaultctl.service` on `:8787`.
-- `vaultctl-web/` — **web UI frontend (optional)** (Svelte + Vite SPA, served via `serve.py`). Service: `vaultweb.service` on `:8788` (proxies `/api/*` to vaultctl). Not required — CLI/TUI are the primary interface.
+- `vaultctl/web/` — **web UI frontend (optional)** (Svelte + Vite SPA, served via `serve.py`). Service: `vaultweb.service` on `:8788` (proxies `/api/*` to vaultctl). Not required — CLI/TUI are the primary interface.
 - `skills/` — **reusable agent skills** for working with this repo (see `skills/vaultctl-backup`).
 
 The frontend talks to the backend through relative `/api/*` (proxied in dev by Vite, in prod by `serve.py`).
@@ -38,7 +38,7 @@ your master password, and serves it through a clean web UI plus a tiny CLI.
   random nonce; the store file is useless without the password.
 - **Session-scoped keys** — the derived key exists only in RAM while unlocked.
   Restarting the service wipes every session.
-- **Two ways to use it** — a polished anime-styled web UI for humans, and
+- **Two ways to use it** — an optional responsive web UI for humans, and
   `vaultctl` (or plain HTTP) for scripts and agents.
 - **Dev-friendly** — ships with a mock server so you can build against the
   same API without touching real secrets.
@@ -56,18 +56,29 @@ key + value      ──▶ AES-256-GCM (random 12-byte nonce)   ──▶ creden
 | Encryption      | AES-256-GCM, per-value random nonce                 |
 | Auth            | Single master password, never stored                |
 | Sessions        | HttpOnly cookie + CSRF token, 30-min idle expiry    |
-| Brute force     | Exponentially increasing delay after wrong attempts |
+| Brute force     | Exponential retry cooldown after repeated failures |
 | Dependencies    | Python 3 + Flask + cryptography                     |
 
 ## Quick start
 
 ### Web UI
 
+Start the encrypted backend:
+
 ```bash
-./run.sh --daemon          # starts the vault on http://127.0.0.1:8787
+VAULT_REAL=1 ./run.sh --daemon
 ```
 
-Open the browser, set a master password (≥ 8 chars), add entries. Done.
+In another terminal, build and serve the optional frontend:
+
+```bash
+cd vaultctl/web
+npm ci
+npm run build
+python3 serve.py
+```
+
+Open `http://127.0.0.1:8788`, set a strong master password, and add entries. The backend API stays on `127.0.0.1:8787`; the web server proxies same-origin `/api/*` requests.
 
 > ⚠️ If you lose the master password, the data is unrecoverable. That's not a
 > bug — it's the threat model.
@@ -310,18 +321,15 @@ Full details — restore, security model, and gotchas — in
 
 ## Security notes
 
-- **Plain HTTP.** The default deployment speaks cleartext. On a trusted LAN
-  that's often fine; anywhere else, front it with a TLS reverse proxy or reach
-  it over Tailscale/VPN. Bind to `127.0.0.1` if you don't need LAN access.
-- **File permissions.** `credentials.enc` and `sessions.json` are written
-  `0600`; keep them that way.
+- **Plain HTTP.** The backend and web server bind to loopback by default. Put them behind a trusted HTTPS reverse proxy or access them over a private VPN. Set `VAULT_COOKIE_SECURE=1` when the browser-facing origin uses HTTPS.
+- **File permissions.** `credentials.enc` is written `0600`; the data directory is `0700`. Legacy `sessions.json` is deleted at startup.
 - **Backups.** `credentials.enc` is fully encrypted — safe to copy into any
   backup system. Restore = drop the file back and restart. Lose both the file
   *and* the password and there is no recovery path. The optional offsite job
   adds a second GPG layer, so a snapshot needs the host-only envelope
   passphrase *and* the master password — see
   [`vaultctl/docs/backup.md`](vaultctl/docs/backup.md).
-- **Sessions are in-memory.** A service restart logs everyone out by design.
+- **Sessions are in-memory only.** Derived keys are never persisted; a service restart logs everyone out by design.
 - **Audit log.** `data/audit.jsonl` records every access decision (allow/deny +
   reason) but never secret values. Inspect with `vaultctl audit` or
   `/api/audit?n=N`. Rotate/truncate it manually if it grows.
@@ -349,7 +357,7 @@ vaultctl/
 │   ├── vaultctl.service            # production unit template
 │   ├── vaultctl-db-backup.service  # one-shot backup unit
 │   └── vaultctl-db-backup.timer    # weekly schedule (Sun 02:00)
-vaultctl-web/
+vaultctl/web/
 ├── serve.py            # optional web frontend (Svelte/Vite + proxy to :8787)
 └── systemd/
     └── vaultweb.service  # optional unit (port 8788) — not enabled by default

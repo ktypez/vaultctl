@@ -13,7 +13,7 @@ else
   APP=mock_vault.py
 fi
 
-export VAULT_HOST="${VAULT_HOST:-0.0.0.0}"
+export VAULT_HOST="${VAULT_HOST:-127.0.0.1}"
 export VAULT_PORT="${VAULT_PORT:-8787}"
 
 if [[ "${1:-}" == "--daemon" ]]; then
