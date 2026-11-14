@@ -12,9 +12,12 @@
 - **Brute force.** Failed unlocks trigger an exponential retry cooldown without blocking request threads.
 - **Accidental leakage.** `vaultctl exec` injects a secret into a child
   process's environment and masks the value (and any 6+ character fragment) in
-  its stdout/stderr, so it never reaches an agent's context, a transcript, or a
-  log. `vaultctl get` still prints plaintext and is intended for trusted shells
-  only.
+  its stdout/stderr. The masking is unconditional, so a redirected
+  `vaultctl exec ... > log.txt` cannot leak the value; it never reaches an
+  agent's context, a transcript, or a log. `vaultctl get` still prints
+  plaintext and is intended for trusted shells only. `vaultctl copy` puts a
+  value on the clipboard over OSC52; treat the clipboard as readable by other
+  processes until you overwrite it.
 - **Auditability.** Every unlock, list, get, set, and delete is appended to
   `data/audit.jsonl` (mode `0600`) with the decision and reason — never the
   value — so access attempts are reviewable after the fact.

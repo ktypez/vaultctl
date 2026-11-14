@@ -13,14 +13,16 @@ copy to a service root, and let systemd manage it.
 ## Deploy
 
 ```bash
-./deploy.sh                  # rsyncs source → service root (excl. .git, venv cache, data)
+./deploy.sh                  # rsyncs source → service root (excl. .git, data, cli build)
 # then manage the service:
 sudo systemctl restart vaultctl
 ```
 
-`deploy.sh` also installs the `vaultctl` CLI onto `~/.local/bin` and symlinks
-it into `~/.opencode/bin`, so a single deploy updates both the service and the
-client.
+`deploy.sh` also builds the Go CLI (`build-cli.sh`) and installs it onto
+`~/.local/bin/vaultctl`, symlinking it into `~/.opencode/bin`, so a single
+deploy updates both the service and the client. Build the binary alone with
+`./build-cli.sh` (or `--install` to put it on PATH). A Go toolchain is needed
+on the machine that runs `deploy.sh`.
 
 ## Service management
 
