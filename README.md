@@ -17,7 +17,8 @@ PBKDF2-derived keys, nothing leaves your machine.
 
 This is a monorepo with two components:
 
-- `vaultctl/` — **credentials vault backend** (Flask API, encrypted store, `vaultctl` CLI). Service: `vaultctl.service` on `:8787`.
+- `vaultctl/` — **credentials vault backend** (Flask API, encrypted store). Service: `vaultctl.service` on `:8787`.
+- `vaultctl/cli/` — **`vaultctl` CLI + TUI** (Go, Charm stack: Cobra + Bubble Tea + Lip Gloss + Huh). Built with `vaultctl/build-cli.sh`; a single static binary, no runtime dependencies.
 - `vaultctl/web/` — **web UI frontend (optional)** (Svelte + Vite SPA, served via `serve.py`). Service: `vaultweb.service` on `:8788` (proxies `/api/*` to vaultctl). Not required — CLI/TUI are the primary interface.
 - `skills/` — **reusable agent skills** for working with this repo (see `skills/vaultctl-backup`).
 
@@ -85,39 +86,48 @@ Open `http://127.0.0.1:8788`, set a strong master password, and add entries. The
 
 ### CLI (`vaultctl`)
 
+A single static Go binary (Charm stack: Cobra + Bubble Tea + Lip Gloss + Huh).
+Output adapts to its destination: **a TTY gets the styled, hanko-red interface;
+a pipe gets plain text or JSON**, so scripts and pipelines are unaffected.
+
 ```bash
-vaultctl list                      # all entry names
+vaultctl list                      # all entry names (pretty on a TTY, one-per-line piped)
 vaultctl get NOUS_API_KEY          # print a secret to stdout (trusted shells only)
 vaultctl set MY_TOKEN "abc123"     # create/update
-vaultctl delete MY_TOKEN           # remove
-vaultctl ui                        # pretty terminal UI (OpenTUI) — search, copy, CRUD, audit
-vaultctl status                    # initialized / unlocked?
+vaultctl set MY_TOKEN              # omit the value to be prompted (masked, no shell history)
+vaultctl delete MY_TOKEN           # remove (asks to confirm on a TTY; --force to skip)
+vaultctl copy NOUS_API_KEY         # copy to the clipboard via OSC52 (works over SSH)
+vaultctl ui                        # full-screen dashboard (see below)
+vaultctl status                    # initialized / unlocked? (JSON when piped)
 vaultctl lock                      # wipe the session
+vaultctl unlock                    # open a session for 30 minutes
 vaultctl exec NOUS_API_KEY -- <cmd> [args...]   # inject into child env; value never printed (masked)
-vaultctl audit [N]                 # last N audit records (JSONL, never values)
+vaultctl audit [N]                 # last N audit records (JSONL when piped, never values)
+vaultctl change-password           # rotate the master password (masked double prompt)
+vaultctl --json <cmd>              # force machine-readable output on any command
 ```
+
+Every command also speaks the legacy machine contract when stdout is not a TTY
+(`list` → one name per line, `status`/`set`/`delete` → JSON, `audit` → JSONL),
+so existing scripts keep working unchanged.
 
 ### Terminal UI (`vaultctl ui`)
 
-A full-screen dashboard over the same API, in the vaultctl visual style
-(monochrome + hanko-red accent). Built on **OpenTUI**
-(`@opentui/core`, run with Bun):
+A full-screen Bubble Tea dashboard in the vaultctl visual style (monochrome +
+hanko-red accent), built into the same Go binary — no Bun, no Node, no separate
+launcher:
 
-- Live search (`/`), masked detail panel, clipboard copy via
-  `wl-copy`/`xclip`/`xsel`/`pbcopy` (OSC52 fallback)
-- Keyboard CRUD: `n` new, `e` edit, `d` delete (confirm dialog),
-  `u`/`l` unlock/lock, `r` refresh, `a` audit log overlay, `q` quit
-- Works anywhere: `vaultctl ui` is the single entry point (no separate vault-tui launcher).
-  Install with `./install-tui.sh` (ensures bun, installs OpenTUI deps — no sudo). `deploy.sh` runs it automatically.
-  `vaultctl ui` falls back to the older Textual UI (`vault_tui.py`) if
-  opentui/ or bun is missing.
-  The TUI reuses the same session files (`~/.vault-password`, `~/.vault-cookie`,
-  `~/.vault-csrf`) as the plain CLI. Values are only ever held in memory.
+- Live search (`/`), hanko-marked list, masked detail prompts
+- Keyboard CRUD: `a` add, `e` edit, `r` rename, `d` delete (confirm dialog),
+  `enter` copy (OSC52), `n` audit view, `R` refresh, `?` help, `q` quit
+- Clipboard works anywhere, including over SSH (OSC52 escape sequence)
+- Reuses the same session files as the plain CLI (`~/.vault-password`,
+  `~/.vault-cookie`, `~/.vault-csrf`). Values are only ever held in memory.
 
 ```bash
 vaultctl ui                        # open the dashboard
 vaultctl ui --check                # non-interactive backend self-test
-cd vaultctl && ./install-tui.sh    # (re)install bun + OpenTUI deps
+./build-cli.sh --install           # build the binary and put it on PATH
 ```
 
 Point tools at any vault instance with `VAULT_URL`:
@@ -201,6 +211,19 @@ VAULT_REAL=1 ./run.sh        # run the real encrypted vault instead
 
 The mock (`mock_vault.py`) implements the exact same HTTP surface with seeded
 fake entries — swap `VAULT_URL` and your consumers keep working.
+
+### Building the CLI
+
+The CLI is Go; build it with:
+
+```bash
+cd vaultctl
+./build-cli.sh              # builds cli/vaultctl
+./build-cli.sh --install    # also installs to ~/.local/bin/vaultctl
+cd cli && go test ./...     # unit tests (client + TUI model)
+```
+
+`deploy.sh` builds and installs the binary automatically.
 
 ## Configuration
 
@@ -343,13 +366,18 @@ Full details — restore, security model, and gotchas — in
 vaultctl/
 ├── app.py              # the vault: Flask service + embedded UI (~1,300 lines)
 ├── mock_vault.py       # dev-only mock, identical API shape
-├── vaultctl            # CLI client (audit, exec, get, set, …)
-├── vault_tui.py        # legacy terminal UI (Textual) — fallback for vaultctl ui
-├── install-tui.sh      # installs bun + OpenTUI deps (no sudo)
-├── opentui/            # OpenTUI front-end (bun + @opentui/core)
-│   └── src/vaultctl-ui.ts   # main TUI — vaultctl ui
+├── cli/                # the vaultctl CLI + TUI (Go, Charm stack)
+│   ├── main.go         # entry point
+│   ├── cmd/            # Cobra command tree (status, list, get, set, exec, ui, …)
+│   └── internal/
+│       ├── client/     # HTTP client: cookie jar, CSRF, session files
+│       ├── theme/      # monochrome + hanko-red visual language
+│       ├── prompt/     # Huh forms (themed)
+│       ├── spin/       # Bubble Tea spinner (TTY-only)
+│       └── ui/         # Bubble Tea dashboard (vaultctl ui)
+├── build-cli.sh        # build the Go binary (+ --install onto PATH)
 ├── run.sh / stop.sh    # manual launchers (mock by default)
-├── deploy.sh           # source → service-root sync (+ installs vaultctl)
+├── deploy.sh           # source → service-root sync (+ builds/installs the CLI)
 ├── install.sh          # installs the systemd unit
 ├── install-backup.sh   # installs the offsite backup engine + weekly user timer
 ├── vaultctl-db-backup  # encrypted offsite snapshot engine (GPG envelope → private repo)

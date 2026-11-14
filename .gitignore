@@ -10,11 +10,11 @@ data/
 sessions.json
 *.log
 
-# OpenTUI / Bun (installed by vaultctl/install-tui.sh — not committed)
-vaultctl/opentui/node_modules/
-vaultctl/opentui/__pycache__/
-
+# Web UI deps
 vaultctl/web/node_modules/
 vaultctl/web/dist/
 
 # Agent skills are source documentation; do not ignore skills/SKILL.md
+
+# Go CLI build artifacts
+vaultctl/cli/vaultctl

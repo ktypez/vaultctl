@@ -13,21 +13,22 @@ rsync -a --delete \
   --exclude 'node_modules' \
   --exclude '__pycache__' \
   --exclude 'data' \
+  --exclude 'cli/vaultctl' \
   "$SRC/" "$DST/"
 
 mkdir -p "$DST/data/logs"
 echo "deployed: $SRC -> $DST"
 
 # Install the vaultctl CLI onto PATH (idempotent).
-if [ -x "$SRC/vaultctl" ]; then
+# The CLI is the Go binary (built here): one static binary that provides
+# every command plus the `vaultctl ui` dashboard.
+if [ -x "$SRC/build-cli.sh" ]; then
+  "$SRC/build-cli.sh" --install
+elif [ -x "$SRC/vaultctl" ]; then
   install -m 0755 "$SRC/vaultctl" "$HOME/.local/bin/vaultctl"
   mkdir -p "$HOME/.opencode/bin"
   ln -sf "$HOME/.local/bin/vaultctl" "$HOME/.opencode/bin/vaultctl"
   echo "installed: vaultctl -> $HOME/.local/bin/vaultctl"
-  # also expose the TUI launcher (idempotent)
-  if [ -x "$SRC/install-tui.sh" ]; then
-    "$SRC/install-tui.sh"
-  fi
 fi
 
 # run installer if present
