@@ -12,7 +12,7 @@ ProtectHome=read-only
 User=admin
 Group=admin
 WorkingDirectory=/home/admin/projects/vaultctl/vaultctl/web
-Environment="HOST=127.0.0.1"
+Environment="HOST=192.168.1.47"
 Environment="PORT=8788"
 Environment="VAULT_URL=http://127.0.0.1:8787"
 ExecStart=/usr/bin/python3 /home/admin/projects/vaultctl/vaultctl/web/serve.py
