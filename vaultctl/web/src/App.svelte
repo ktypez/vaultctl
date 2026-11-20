@@ -34,6 +34,12 @@
   let newName = $state('');
   let newValue = $state('');
 
+  const NAME_RE = /^[A-Za-z0-9_.\-]+$/;
+  const NAME_MAX = 128;
+  function validName(name) {
+    return name.length >= 1 && name.length <= NAME_MAX && NAME_RE.test(name);
+  }
+
   // settings
   let showCpCur = $state(false);
   let showCpNew = $state(false);
@@ -193,7 +199,7 @@
 
   async function saveEntry() {
     const name = newName.trim();
-    if (!name) { showToast('Name is required', 'err'); return; }
+    if (!validName(name)) { showToast('Name must be letters, numbers, . - _ (1-128 chars)', 'err'); return; }
     if (newValue === '') { showToast('Value is required', 'err'); return; }
     const csrf = getCsrf();
     if (!csrf) {
@@ -472,7 +478,7 @@
         </div>
         <div class="field">
           <label for="newValue">Value</label>
-          <input id="newValue" type="text" bind:value={newValue} class="input mono" placeholder="secret value" />
+          <input id="newValue" type="password" bind:value={newValue} class="input mono" placeholder="secret value" />
         </div>
         <div class="actions">
           <button class="btn cta" onclick={saveEntry}>Save entry</button>

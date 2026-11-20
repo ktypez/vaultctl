@@ -26,6 +26,7 @@ import os
 import json
 import time
 import hmac
+import re
 import secrets
 import threading
 from functools import wraps
@@ -76,6 +77,19 @@ DELAY_CAP = 10.0
 
 VERIFIER_PLAINTEXT = b"credentials-vault::unlock::ok\x00END"
 
+# Entry names must be storable and routable: the web UI and the Go CLI share
+# this contract (CLI: client.ValidName — regex ^[A-Za-z0-9_.\-]+$, 1-128 chars).
+NAME_RE = re.compile(r"[A-Za-z0-9_.\-]+")
+INVALID_NAME_MSG = "invalid name: use letters, numbers, . - _ (1-128 chars)"
+
+
+def valid_name(name) -> bool:
+    return (
+        isinstance(name, str)
+        and 1 <= len(name) <= 128
+        and NAME_RE.fullmatch(name) is not None
+    )
+
 # --------------------------------------------------------------------------- #
 # App + in-memory state
 # --------------------------------------------------------------------------- #
@@ -87,11 +101,34 @@ app.config.update(
     JSON_SORT_KEYS=False,
 )
 
+
+@app.after_request
+def _security_headers(resp):
+    # The vault serves the API only; keep responses non-executable and non-
+    # frameable. The Svelte app's CSP lives on the web proxy (serve.py).
+    resp.headers.setdefault("X-Content-Type-Options", "nosniff")
+    resp.headers.setdefault("X-Frame-Options", "DENY")
+    resp.headers.setdefault("Referrer-Policy", "no-referrer")
+    return resp
+
+
 _sessions = {}          # token -> {key, expires, csrf}
 _sessions_lock = threading.Lock()
 
-_fail = {"count": 0, "reset_at": 0.0, "blocked_until": 0.0}
+# Brute-force tracking: per-IP buckets (an attacker from one address must not
+# lock the service out for everyone), with a global bucket fallback when the
+# peer address is unknown. After MAX_FAIL_BEFORE_DELAY failures per bucket,
+# each further attempt is floored at MIN_ATTEMPT_GAP; the count resets after
+# FAIL_RESET_AFTER seconds without a failure or on a successful unlock.
+MIN_ATTEMPT_GAP = 60.0
+FAIL_RESET_AFTER = 120.0
+
+_fail = {"count": 0, "reset_at": 0.0, "blocked_until": 0.0, "last_attempt": 0.0}
+_fail_by_ip = {}        # ip -> same shape as _fail
 _fail_lock = threading.Lock()
+
+# Bound the IP-keyed map: it lives in RAM on the unlock endpoint's failure path.
+_FAIL_IP_MAX = 10_000
 
 
 # --------------------------------------------------------------------------- #
@@ -221,34 +258,74 @@ def set_unlock_cookie(resp, token: str):
     return resp
 
 
-def _bruteforce_delay() -> int:
+def _bucket_for_ip(ip):
+    """Return the failure-tracking bucket for a peer address.
+
+    Caller holds _fail_lock. Without a usable address (unknown peer), the
+    global bucket is used; at _FAIL_IP_MAX the stalest entry is evicted.
+    """
+    if not ip:
+        return _fail
+    bucket = _fail_by_ip.get(ip)
+    if bucket is None:
+        if len(_fail_by_ip) >= _FAIL_IP_MAX:
+            oldest = min(_fail_by_ip, key=lambda k: _fail_by_ip[k]["reset_at"])
+            del _fail_by_ip[oldest]
+        bucket = _fail_by_ip[ip] = {
+            "count": 0, "reset_at": 0.0, "blocked_until": 0.0, "last_attempt": 0.0,
+        }
+    return bucket
+
+
+def _request_ip():
+    """Peer address of the current unlock request, or "" when unknown."""
+    try:
+        return request.remote_addr or ""
+    except RuntimeError:
+        return ""
+
+
+def _bruteforce_delay(ip=None) -> int:
     """Return a Retry-After value instead of sleeping inside a request thread."""
     with _fail_lock:
+        bucket = _bucket_for_ip(ip)
         now = time.time()
-        if now >= _fail["reset_at"] and now >= _fail["blocked_until"]:
-            _fail["count"] = 0
-            _fail["blocked_until"] = 0.0
-        remaining = _fail["blocked_until"] - now
-        return max(0, int(remaining + 0.999))
+        if now >= bucket["reset_at"] and now >= bucket["blocked_until"]:
+            bucket["count"] = 0
+            bucket["blocked_until"] = 0.0
+        gap = 0.0
+        if bucket["count"] >= MAX_FAIL_BEFORE_DELAY and bucket["last_attempt"]:
+            # Floor repeated failures per address: no more than about one
+            # attempt per MIN_ATTEMPT_GAP, so patience alone cannot crack an
+            # 8+ character password while nobody else is affected.
+            gap = MIN_ATTEMPT_GAP - (now - bucket["last_attempt"])
+        retry = max(gap, bucket["blocked_until"] - now)
+        if retry > 0:
+            return max(0, int(retry + 0.999))
+        bucket["last_attempt"] = now
+        return 0
 
 
-def _record_failure():
+def _record_failure(ip=None):
     with _fail_lock:
+        bucket = _bucket_for_ip(ip)
         now = time.time()
-        if now >= _fail["reset_at"] and now >= _fail["blocked_until"]:
-            _fail["count"] = 0
-        _fail["count"] += 1
-        _fail["reset_at"] = now + 60
-        if _fail["count"] >= MAX_FAIL_BEFORE_DELAY:
-            delay = min(60.0, 5.0 * (2 ** (_fail["count"] - MAX_FAIL_BEFORE_DELAY)))
-            _fail["blocked_until"] = max(_fail["blocked_until"], now + delay)
+        if now >= bucket["reset_at"] and now >= bucket["blocked_until"]:
+            bucket["count"] = 0
+        bucket["count"] += 1
+        bucket["reset_at"] = now + FAIL_RESET_AFTER
+        bucket["last_attempt"] = now
+        if bucket["count"] >= MAX_FAIL_BEFORE_DELAY:
+            delay = min(60.0, 5.0 * (2 ** (bucket["count"] - MAX_FAIL_BEFORE_DELAY)))
+            bucket["blocked_until"] = max(bucket["blocked_until"], now + delay)
 
 
-def _record_success():
+def _record_success(ip=None):
     with _fail_lock:
-        _fail["count"] = 0
-        _fail["reset_at"] = 0.0
-        _fail["blocked_until"] = 0.0
+        bucket = _bucket_for_ip(ip)
+        bucket["count"] = 0
+        bucket["reset_at"] = 0.0
+        bucket["blocked_until"] = 0.0
 
 
 # ---------------------------------------------------------------------------
@@ -337,6 +414,8 @@ def api_setup():
     data = request.json or {}
     password = data.get("password", "")
     confirm = data.get("confirm", "")
+    if not isinstance(password, str) or not isinstance(confirm, str):
+        return jsonify({"error": "password must be a string"}), 400
     if password != confirm:
         return jsonify({"error": "Passwords do not match"}), 400
     if len(password) < MIN_PASSWORD_LEN:
@@ -363,7 +442,7 @@ def api_setup():
 def api_unlock():
     if not vault_exists():
         return jsonify({"error": "Vault not initialized"}), 400
-    retry_after = _bruteforce_delay()
+    retry_after = _bruteforce_delay(_request_ip())
     if retry_after:
         return jsonify({"error": "Too many failed unlock attempts. Try again later."}), 429, {"Retry-After": str(retry_after)}
 
@@ -380,11 +459,11 @@ def api_unlock():
         ok = False
 
     if not ok:
-        _record_failure()
+        _record_failure(_request_ip())
         audit("unlock", "*", "deny", "bad_password")
         return jsonify({"error": "Incorrect master password"}), 401
 
-    _record_success()
+    _record_success(_request_ip())
     token, csrf = new_session(key)
     resp = jsonify({"ok": True, "csrf": csrf})
     audit("unlock", "*", "allow", "ok")
@@ -450,10 +529,11 @@ def put_entry():
         audit("set", (request.json or {}).get("name", "?"), "deny", "auth")
         return err
     data = request.json or {}
-    name = (data.get("name") or "").strip()
+    raw_name = data.get("name")
+    name = raw_name.strip() if isinstance(raw_name, str) else ""
+    if not valid_name(name):
+        return jsonify({"error": INVALID_NAME_MSG}), 400
     value = data.get("value")
-    if not name:
-        return jsonify({"error": "name is required"}), 400
     if value is None:
         return jsonify({"error": "value is required"}), 400
     vault = load_vault()
@@ -493,6 +573,9 @@ def change_password():
     current = data.get("current", "")
     new_pw = data.get("new", "")
     confirm = data.get("confirm", "")
+    if (not isinstance(current, str) or not isinstance(new_pw, str)
+            or not isinstance(confirm, str)):
+        return jsonify({"error": "passwords must be strings"}), 400
     if new_pw != confirm:
         return jsonify({"error": "New passwords do not match"}), 400
     if len(new_pw) < MIN_PASSWORD_LEN:

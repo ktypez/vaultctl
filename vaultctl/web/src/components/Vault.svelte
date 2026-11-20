@@ -13,6 +13,12 @@
   let toastKind = $state('');
   let toastTimer;
 
+  const NAME_RE = /^[A-Za-z0-9_.\-]+$/;
+  const NAME_MAX = 128;
+  function validName(name) {
+    return name.length >= 1 && name.length <= NAME_MAX && NAME_RE.test(name);
+  }
+
   function showToast(msg, kind = '') {
     toastMsg = msg;
     toastKind = kind;
@@ -79,7 +85,7 @@
   async function save() {
     const name = newName.trim();
     const value = newValue;
-    if (!name) { showToast('Name is required', 'err'); return; }
+    if (!validName(name)) { showToast('Name must be letters, numbers, . - _ (1-128 chars)', 'err'); return; }
     if (value === '') { showToast('Value is required', 'err'); return; }
     const r = await api('/api/entries', 'POST', { name, value });
     if (r.ok) {
@@ -158,7 +164,7 @@
         </div>
         <div class="field">
           <label>Value</label>
-          <input class="input mono" bind:value={newValue} placeholder="secret value" />
+          <input type="password" class="input mono" bind:value={newValue} placeholder="secret value" />
         </div>
         <div style="display:flex; gap:10px; margin-top:20px">
           <button class="btn cta" style="flex:1" onclick={save}>Save entry</button>
