@@ -13,6 +13,7 @@ rsync -a --delete \
   --exclude 'node_modules' \
   --exclude '__pycache__' \
   --exclude 'data' \
+  --exclude 'venv' \
   --exclude 'cli/vaultctl' \
   "$SRC/" "$DST/"
 

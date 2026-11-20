@@ -27,7 +27,8 @@ class SessionSecurityTests(unittest.TestCase):
         vault.ITERATIONS = 1_000
         vault.COOKIE_SECURE = True
         vault._sessions.clear()
-        vault._fail.update({"count": 0, "reset_at": 0.0, "blocked_until": 0.0})
+        vault._fail.update({"count": 0, "reset_at": 0.0, "blocked_until": 0.0, "last_attempt": 0.0})
+        vault._fail_by_ip.clear()
         self.client = vault.app.test_client()
 
     def tearDown(self):

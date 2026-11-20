@@ -46,6 +46,9 @@ class Handler(http.server.SimpleHTTPRequestHandler):
     def do_OPTIONS(self):
         self._proxy("OPTIONS")
 
+    def do_HEAD(self):
+        self._proxy("HEAD")
+
     def _proxy(self, method):
         # This is a same-origin API proxy, not a general-purpose HTTP proxy.
         if not (self.path == "/api" or self.path.startswith("/api/")):
@@ -90,7 +93,8 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             self.send_header(k, v)
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
-        self.wfile.write(body)
+        if self.command != "HEAD":
+            self.wfile.write(body)
 
     def end_headers(self):
         self.send_header("X-Content-Type-Options", "nosniff")
