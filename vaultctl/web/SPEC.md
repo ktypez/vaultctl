@@ -19,12 +19,12 @@ This document describes the current frontend. It supersedes the original scaffol
 - Add/update sends a key/value pair to the backend.
 - Lock clears frontend entry/value/reveal state and the CSRF token.
 - `#/settings` provides password change, session lock, and the latest 100 audit events.
-- Light/dark appearance preference is persisted in browser `localStorage`.
+- Light/dark appearance is driven by `<html data-v6-mode>` from `@mcky/ui/theme` and persisted under `localStorage['mcky-v6-mode']`; a legacy `localStorage['theme']` value is migrated once on first load.
 - Toast messages report action outcomes.
 
 ## Visual system
 
-Use the DATA Ledger V5 Paper Pop direction in `src/app.css`: warm dotted-paper background, Sora and JetBrains Mono typography, soft rounded surfaces, hand-placed sticker-like accents, outlined controls with hard offset shadows, and responsive desktop/mobile layouts. Maintain the light/dark theme toggle.
+Use the shared MCKY UI V6 "Work Shell" foundation: `@mcky/ui/v6-base.css` supplies canonical tokens, theme, motion and primitives (no Google Fonts import), while `src/app.css` keeps vault-local aliases and component styles. `@mcky/ui/scenery` paints the fixed day/night backdrop; the `.desk` UI sits in a `.mcky-v6-scenery-content` wrapper above it, with the topbar, modal and toast layers above that. Keep the cream window shell with 2.5px ink outlines and hard offset shadows, yellow primary actions, and Space Grotesk / Sarabun / DM Mono typography self-hosted under `public/fonts` (the strict same-origin CSP forbids webfont CDNs). The shared package is pinned to commit `d208f003f106ed33c714c9acd0ca6fdac76c6b99`.
 
 ## API contract
 

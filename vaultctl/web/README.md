@@ -2,11 +2,11 @@
 
 A Svelte 5 single-page web interface for the `vaultctl` encrypted credentials vault. The UI is optional; the vault backend and CLI can run without it.
 
-The interface includes master-password setup and unlock, masked/revealable secrets, search, copy and delete, password management, an audit log, and light/dark themes. Its visual system follows DATA Ledger V5 Paper Pop: warm dotted paper, rounded cards, sticker-like outlines and hard shadows, with responsive layouts.
+The interface includes master-password setup and unlock, masked/revealable secrets, search, copy and delete, password management, an audit log, and light/dark themes. Its visual system follows the shared MCKY UI V6 "Work Shell" package (`@mcky/ui`, pinned to commit `d208f003f106ed33c714c9acd0ca6fdac76c6b99`): canonical tokens, theme, motion and primitives via `@mcky/ui/v6-base.css`, plus the shared animated `<Scenery />` backdrop — three clouds, three ridges and two trees by day; twelve stars, a crescent and ten lit city buildings at night. The cream window shell keeps ink outlines and hard offset shadows, yellow primary actions, and Space Grotesk / Sarabun / DM Mono, all self-hosted under `public/fonts` (the strict same-origin CSP forbids webfont CDNs). The mode is persisted under `localStorage['mcky-v6-mode']`; an older `localStorage['theme']` value is migrated on first load.
 
 ## Requirements
 
-- Node.js and npm (for development/build)
+- Node.js and npm (for development/build). The pinned `@mcky/ui` tarball needs remote npm fetches enabled; the local `.npmrc` sets `allow-remote=all` so plain `npm ci` works.
 - Python 3 (for the static server)
 - A running `vaultctl` API, default `http://127.0.0.1:8787`
 
