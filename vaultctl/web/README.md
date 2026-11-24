@@ -2,7 +2,7 @@
 
 A Svelte 5 single-page web interface for the `vaultctl` encrypted credentials vault. The UI is optional; the vault backend and CLI can run without it.
 
-The interface includes master-password setup and unlock, masked/revealable secrets, search, copy and delete, password management, an audit log, and light/dark themes. Its visual system follows DATA Ledger V5 Paper Pop: warm dotted paper, rounded cards, sticker-like outlines and hard shadows, with responsive layouts.
+The interface includes master-password setup and unlock, masked/revealable secrets, search, copy and delete, password management, an audit log, and light/dark themes. Its visual system follows MCKY UI V6 "Work Shell": a sky dotted canvas, a cream window shell with ink outlines and hard offset shadows, yellow primary actions, and Space Grotesk / Sarabun / DM Mono, all self-hosted under `public/fonts` (the strict same-origin CSP forbids webfont CDNs).
 
 ## Requirements
 

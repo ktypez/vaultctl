@@ -24,7 +24,7 @@ This document describes the current frontend. It supersedes the original scaffol
 
 ## Visual system
 
-Use the DATA Ledger V5 Paper Pop direction in `src/app.css`: warm dotted-paper background, Sora and JetBrains Mono typography, soft rounded surfaces, hand-placed sticker-like accents, outlined controls with hard offset shadows, and responsive desktop/mobile layouts. Maintain the light/dark theme toggle.
+Use the MCKY UI V6 "Work Shell" direction in `src/app.css`: sky dotted canvas, cream window shell with 2.5px ink outlines and hard offset shadows, yellow primary actions, and Space Grotesk / Sarabun / DM Mono typography self-hosted under `public/fonts` (the strict same-origin CSP forbids webfont CDNs). Maintain the light/dark theme toggle.
 
 ## API contract
 
