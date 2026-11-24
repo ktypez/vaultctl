@@ -3,9 +3,11 @@
   import { fade, fly, scale } from 'svelte/transition';
   import { flip } from 'svelte/animate';
   import { quintOut, cubicOut } from 'svelte/easing';
+  import Scenery from '@mcky/ui/scenery';
+  import { onV6ModeChange, toggleV6Mode } from '@mcky/ui/theme';
   import { api, getCsrf, setCsrf, clearCsrf } from './lib/api.js';
 
-  let theme = $state('light');
+  let mode = $state('light');
   let initialized = $state(false);
   let unlocked = $state(false);
   let route = $state('vault');
@@ -53,13 +55,10 @@
     }, 2600);
   }
 
-  function applyTheme(t) {
-    theme = t;
-    document.documentElement.setAttribute('data-theme', t);
-    try { localStorage.setItem('theme', t); } catch (e) { /* ignore */ }
-  }
   function toggleTheme() {
-    applyTheme(theme === 'dark' ? 'light' : 'dark');
+    // The shared helper persists `mcky-v6-mode` and paints data-v6-mode on <html>.
+    // onV6ModeChange below keeps this label and the scenery in sync.
+    toggleV6Mode();
   }
 
   function syncRoute() {
@@ -229,23 +228,28 @@
     else showToast((r.data && r.data.error) || 'error', 'err');
   }
 
-  onMount(async () => {
-    try {
-      const saved = localStorage.getItem('theme');
-      if (saved) theme = saved;
-      else if (window.matchMedia('(prefers-color-scheme: dark)').matches) theme = 'dark';
-    } catch (e) { /* ignore */ }
-    applyTheme(theme);
+  onMount(() => {
+    mode = document.documentElement.dataset.v6Mode === 'dark' ? 'dark' : 'light';
+    const stopModeWatch = onV6ModeChange((next) => { mode = next; });
 
     syncRoute();
     window.addEventListener('hashchange', syncRoute);
 
-    await refreshStatus();
-    if (unlocked) await refreshEntries();
+    void (async () => {
+      await refreshStatus();
+      if (unlocked) await refreshEntries();
+    })();
+
+    return () => {
+      stopModeWatch();
+      window.removeEventListener('hashchange', syncRoute);
+      clearTimeout(toastTimer);
+    };
   });
 </script>
 
-<div class="desk">
+<Scenery />
+<div class="desk mcky-v6-scenery-content">
   <div class="shell">
     <header class="topbar">
       <div class="inner">
@@ -260,7 +264,12 @@
               <span class="dot"></span>{unlocked ? 'Unlocked' : 'Locked'}
             </span>
           {/if}
-          <button class="ghost" onclick={toggleTheme}>{theme === 'dark' ? 'Light' : 'Dark'}</button>
+          <button
+            class="ghost"
+            onclick={toggleTheme}
+            aria-label={mode === 'dark' ? 'เปลี่ยนเป็นโหมดกลางวัน' : 'เปลี่ยนเป็นโหมดกลางคืน'}
+            title={mode === 'dark' ? 'โหมดกลางวัน' : 'โหมดกลางคืน'}
+          >{mode === 'dark' ? 'Light' : 'Dark'}</button>
           {#if unlocked}
             <a class="ghost" href="#/settings">Settings</a>
             <button class="ghost danger" onclick={doLock}>Lock</button>
