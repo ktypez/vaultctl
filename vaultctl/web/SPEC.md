@@ -19,12 +19,12 @@ This document describes the current frontend. It supersedes the original scaffol
 - Add/update sends a key/value pair to the backend.
 - Lock clears frontend entry/value/reveal state and the CSRF token.
 - `#/settings` provides password change, session lock, and the latest 100 audit events.
-- Light/dark appearance is driven by `<html data-v6-mode>` from `@mcky/ui/theme` and persisted under `localStorage['mcky-v6-mode']`; a legacy `localStorage['theme']` value is migrated once on first load.
+- Appearance is driven by `<html data-theme="light|dark" data-palette="mochi|matcha|soda|sakura">`, painted before first paint by `index.html` and kept in sync by `src/lib/design/theme.js`. The mode cycles auto → light → dark and is persisted under `localStorage['mochi.theme']`; the palette under `localStorage['mochi.palette']`.
 - Toast messages report action outcomes.
 
 ## Visual system
 
-Use the shared MCKY UI V6 "Work Shell" foundation: `@mcky/ui/v6-base.css` supplies canonical tokens, theme, motion and primitives (no Google Fonts import), while `src/app.css` keeps vault-local aliases and component styles. `@mcky/ui/scenery` paints the fixed day/night backdrop; the `.desk` UI sits in a `.mcky-v6-scenery-content` wrapper above it, with the topbar, modal and toast layers above that. Keep the cream window shell with 2.5px ink outlines and hard offset shadows, yellow primary actions, and Space Grotesk / Sarabun / DM Mono typography self-hosted under `public/fonts` (the strict same-origin CSP forbids webfont CDNs). The shared package is pinned to commit `d208f003f106ed33c714c9acd0ca6fdac76c6b99`.
+Use the locally-owned pastel "mochi" system vendored from DATA Ledger / Truck: `src/lib/design/tokens.css` (paper/ink/line ramp, four HSL palettes, radii, `--shadow-pop`), `ui.css` (card, eyebrow, pill buttons, chips, badges, progress, mono marks), `fonts.css` + `public/fonts` (Itim / Mali / Prompt, thai + latin), and `theme.js` (auto/light/dark plus mochi/matcha/soda/sakura). `src/app.css` adds vault-specific layout and dashboard-equivalent AA contrast guardrails; there is no shared UI dependency, no gradient decoration and no external font request. Surfaces are pastel paper cards with 1px lines and soft offset shadows, rather than the old sky canvas / cream window shell with ink outlines and hard offset shadows.
 
 ## API contract
 

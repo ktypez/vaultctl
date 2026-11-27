@@ -1,0 +1,220 @@
+/* Vendored from DATA Ledger (data.mcky.space) src/lib/tokens.css via the
+ * dashboard copy in src/lib/design/tokens.css — the same pastel "mochi" token
+ * set Truck ports in themes/mochi.css. Owned locally; no shared UI dependency.
+ */
+/* =====================================================================
+   DATA LEDGER · DESIGN TOKENS (pastel edition)
+   - Pastel palette: soft medium "ink tones" for text/borders,
+     candy fills for surfaces. NO gradients anywhere.
+   - Adjustable: --elev (shadow level) and --r-scale (corner roundness)
+     are driven at runtime from Settings (see lib/settings.js).
+   ===================================================================== */
+
+/* fonts are linked in app.html (same Itim / Mali / Prompt set as DATA Ledger) */
+
+/* ---------- 1. Primitives ---------- */
+:root {
+  /* palette hues (overridden per [data-palette]) */
+  --hue-pri: 256;
+  --hue-acc: 330;
+  --hue-sec: 165;
+
+  /* light-theme anchors (overridden per [data-theme]) */
+  --s-pri: 58%;  --l-pri: 55%;  --l-pri-fill: 80%;  --l-pri-fill-hov: 74%;  --l-pri-soft: 94%;  --l-pri-ink: 30%;
+  --s-acc: 65%;  --l-acc: 56%;  --l-acc-fill: 84%;  --l-acc-fill-hov: 78%;  --l-acc-soft: 94%;  --l-acc-ink: 32%;
+  --s-sec: 55%;  --l-sec: 58%;
+
+  /* ---- composed colours (use these) ---- */
+  /* text / border tone — soft, readable */
+  --pri:        hsl(var(--hue-pri) var(--s-pri) var(--l-pri));
+  --pri-strong: hsl(var(--hue-pri) var(--s-pri) calc(var(--l-pri) - 8%));
+  /* pastel fills — surfaces, buttons, chips-on */
+  --pri-fill:      hsl(var(--hue-pri) calc(var(--s-pri) + 4%) var(--l-pri-fill));
+  --pri-fill-hov:  hsl(var(--hue-pri) calc(var(--s-pri) + 4%) var(--l-pri-fill-hov));
+  --pri-soft:      hsl(var(--hue-pri) calc(var(--s-pri) - 4%) var(--l-pri-soft));
+  --pri-ink:       hsl(var(--hue-pri) calc(var(--s-pri) + 2%) var(--l-pri-ink));
+
+  --acc:        hsl(var(--hue-acc) var(--s-acc) var(--l-acc));
+  --acc-fill:      hsl(var(--hue-acc) calc(var(--s-acc) + 5%) var(--l-acc-fill));
+  --acc-fill-hov:  hsl(var(--hue-acc) calc(var(--s-acc) + 5%) var(--l-acc-fill-hov));
+  --acc-soft:      hsl(var(--hue-acc) calc(var(--s-acc) + 5%) var(--l-acc-soft));
+  --acc-ink:       hsl(var(--hue-acc) calc(var(--s-acc) - 8%) var(--l-acc-ink));
+
+  --sec:        hsl(var(--hue-sec) var(--s-sec) var(--l-sec));
+
+  /* ---------- 2. Typography ---------- */
+  --font-sans: "Itim", "Prompt", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans Thai", sans-serif;
+  --font-display: "Itim", "Prompt", ui-sans-serif, system-ui, "Noto Sans Thai", sans-serif;
+  --font-fun: "Mali", "Itim", cursive;
+
+  --fs-2xs: 11px;
+  --fs-xs: 12px;
+  --fs-sm: 13px;
+  --fs-md: 15px;
+  --fs-lg: 17px;
+  --fs-xl: 20px;
+  --fs-2xl: 26px;
+  --fs-3xl: 34px;
+
+  /* ---------- 3. Radii (scaled by Settings → --r-scale) ---------- */
+  --r-scale: 1;
+  --r-xs: calc(8px * var(--r-scale));
+  --r-sm: calc(12px * var(--r-scale));
+  --r-md: calc(16px * var(--r-scale));
+  --r-lg: calc(22px * var(--r-scale));
+  --r-xl: calc(28px * var(--r-scale));
+  --r-2xl: calc(36px * var(--r-scale));
+  --r-pill: 999px;
+
+  /* ---------- 4. Spacing (4px base) ---------- */
+  --sp-0: 0;
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-7: 32px;
+  --sp-8: 40px;
+  --sp-9: 52px;
+  --sp-10: 64px;
+
+  /* ---------- 5. Motion ---------- */
+  --ease-spring: cubic-bezier(.34, 1.56, .64, 1);
+  --ease-out: cubic-bezier(.22, 1, .36, 1);
+  --ease-in-out: cubic-bezier(.65, 0, .35, 1);
+  --dur-fast: 120ms;
+  --dur: 200ms;
+  --dur-slow: 380ms;
+
+  /* ---------- 6. Layout ---------- */
+  --maxw: 1080px;
+  --topbar-h: 54px;
+}
+
+/* ---------- 7. Palettes (hue only) ---------- */
+[data-palette="mochi"]  { --hue-pri: 256; --hue-acc: 330; --hue-sec: 165; } /* violet · pink · mint   */
+[data-palette="matcha"] { --hue-pri: 158; --hue-acc: 84;  --hue-sec: 200; } /* green  · lime · sky    */
+[data-palette="soda"]   { --hue-pri: 222; --hue-acc: 190; --hue-sec: 280; } /* blue   · cyan · grape  */
+[data-palette="sakura"] { --hue-pri: 338; --hue-acc: 16;  --hue-sec: 300; } /* pink   · coral· orchid */
+
+/* ---------- 8. Themes ---------- */
+[data-theme="light"] {
+  --s-pri: 58%;  --l-pri: 55%;  --l-pri-fill: 80%;  --l-pri-fill-hov: 74%;  --l-pri-soft: 94%;  --l-pri-ink: 30%;
+  --s-acc: 65%;  --l-acc: 56%;  --l-acc-fill: 84%;  --l-acc-fill-hov: 78%;  --l-acc-soft: 94%;  --l-acc-ink: 32%;
+  --s-sec: 55%;  --l-sec: 58%;
+
+  --paper:   #FFFDF8;
+  --paper-2: #FFFFFF;
+  --paper-3: #F7F2EA;
+  --ink:     #322A42;
+  --ink-2:   #6B6383;
+  --ink-3:   #A39BB8;
+  --line:    #EFE9DF;
+  --line-2:  #E2D9CB;
+  --scrim:   rgba(50, 42, 66, .40);
+  --shadow-rgb: 50 42 66;
+
+  color-scheme: light;
+}
+
+[data-theme="dark"] {
+  --s-pri: 55%;  --l-pri: 76%;  --l-pri-fill: 72%;  --l-pri-fill-hov: 66%;  --l-pri-soft: 24%;  --l-pri-ink: 26%;
+  --s-acc: 62%;  --l-acc: 78%;  --l-acc-fill: 74%;  --l-acc-fill-hov: 68%;  --l-acc-soft: 25%;  --l-acc-ink: 28%;
+  --s-sec: 55%;  --l-sec: 66%;
+
+  --paper:   #17131F;
+  --paper-2: #211B2C;
+  --paper-3: #2A2338;
+  --ink:     #F4EFF9;
+  --ink-2:   #C9C1DC;
+  --ink-3:   #948BAA;
+  --line:    #332B45;
+  --line-2:  #443A5C;
+  --scrim:   rgba(8, 5, 16, .60);
+  --shadow-rgb: 0 0 0;
+
+  color-scheme: dark;
+}
+
+/* ---------- 9. Elevation (driven by Settings → --elev, 0…2) ---------- */
+:root {
+  --elev: 1;
+  --shadow-sm:
+    0 1px 2px rgb(var(--shadow-rgb) / calc(.06 * var(--elev))),
+    0 1px 3px rgb(var(--shadow-rgb) / calc(.05 * var(--elev)));
+  --shadow-md:
+    0 calc(6px * var(--elev)) calc(18px * var(--elev)) rgb(var(--shadow-rgb) / calc(.10 * var(--elev))),
+    0 calc(2px * var(--elev)) calc(5px * var(--elev)) rgb(var(--shadow-rgb) / calc(.06 * var(--elev)));
+  --shadow-lg:
+    0 calc(22px * var(--elev)) calc(54px * var(--elev)) rgb(var(--shadow-rgb) / calc(.16 * var(--elev))),
+    0 calc(8px * var(--elev)) calc(18px * var(--elev)) rgb(var(--shadow-rgb) / calc(.10 * var(--elev)));
+  /* pastel "sticker" pop: solid offset + soft shadow */
+  --shadow-pop: 0 calc(4px * var(--elev)) 0 var(--line-2), var(--shadow-md);
+  --shadow-pop-lg: 0 calc(7px * var(--elev)) 0 var(--line-2), var(--shadow-lg);
+}
+
+/* ---------- 10. Decorative texture (toggle via data-texture) ---------- */
+:root {
+  --paper-dot: radial-gradient(circle at center, var(--line) 1px, transparent 1.5px);
+  --ring: 0 0 0 3px var(--paper-2), 0 0 0 5px var(--pri);
+}
+[data-texture="off"] { --paper-dot: none; }
+
+/* =====================================================================
+   BASE RESET + GLOBAL
+   ===================================================================== */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  font-family: var(--font-sans);
+  font-size: var(--fs-md);
+  line-height: 1.5;
+  color: var(--ink);
+  background: var(--paper);
+  background-image: var(--paper-dot);
+  background-size: 22px 22px;
+  background-position: -1px -1px;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  min-height: 100vh;
+  transition: background-color var(--dur) var(--ease-out), color var(--dur) var(--ease-out);
+}
+h1, h2, h3, h4, p { margin: 0; }
+button { font: inherit; color: inherit; cursor: pointer; }
+a { color: inherit; text-decoration: none; }
+img { display: block; max-width: 100%; }
+input, textarea { font: inherit; color: inherit; }
+:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+  border-radius: var(--r-sm);
+}
+::selection { background: var(--pri-soft); color: var(--pri); }
+
+/* scrollbars */
+* { scrollbar-width: thin; scrollbar-color: var(--line-2) transparent; }
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-thumb { background: var(--line-2); border-radius: 999px; border: 3px solid transparent; background-clip: content-box; }
+*::-webkit-scrollbar-track { background: transparent; }
+
+/* ---------- utility helpers ---------- */
+.wrap { width: 100%; max-width: var(--maxw); margin-inline: auto; padding-inline: var(--sp-5); }
+.row { display: flex; align-items: center; gap: var(--sp-3); }
+.col { display: flex; flex-direction: column; }
+.muted { color: var(--ink-2); }
+.dim { color: var(--ink-3); }
+.tnum { font-variant-numeric: tabular-nums; }
+.visually-hidden {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+  }
+}

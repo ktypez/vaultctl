@@ -22,17 +22,16 @@
 </script>
 
 <div class="auth">
-  <div class="auth-card">
-    <div class="mark" style="width:56px;height:56px;border:1px solid var(--line);background:var(--bg2);display:grid;place-items:center;border-radius:var(--radius-sm);margin-bottom:24px">
-      <img src="/favicon.svg" alt="" style="width:40px;height:40px;object-fit:contain" />
-    </div>
+  <div class="card auth-card">
+    <div class="mono-mark" aria-hidden="true">V</div>
+    <div class="eyebrow"><span class="eyebrow-mark">✳</span> SECURE ACCESS / MASTER KEY</div>
     <h2>Unlock vault</h2>
     <p class="sub">Enter your master password to access your credentials.</p>
     <div class="field">
-      <label>Master password</label>
+      <label for="unlockPassword">Master password</label>
       <div class="input-wrap">
-        <input class="input" type={showPw ? 'text' : 'password'} bind:value={password} autocomplete="current-password" placeholder="master password" onkeydown={(e) => { if (e.key === 'Enter') submit(); }} />
-        <button type="button" class="pw-toggle" onclick={() => (showPw = !showPw)}>{showPw ? 'hide' : 'show'}</button>
+        <input id="unlockPassword" class="input" type={showPw ? 'text' : 'password'} bind:value={password} autocomplete="current-password" placeholder="master password" onkeydown={(e) => { if (e.key === 'Enter') submit(); }} />
+        <button type="button" class="pw" onclick={() => (showPw = !showPw)}>{showPw ? 'hide' : 'show'}</button>
       </div>
     </div>
     <button class="btn cta" disabled={loading} onclick={submit}>Unlock</button>

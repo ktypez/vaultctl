@@ -1,0 +1,226 @@
+/* vaultctl-local primitives in the DATA Ledger "mochi" idiom (vendored from
+ * dashboard/src/lib/design/ui.css). Mirrors
+ * data-ledger/src/components/{Button,Chip,Badge,Progress,TopBar} and
+ * truck/apps/web-svelte/src/themes/mochi.css. No shared UI dependency. */
+
+/* ── Sticker card ───────────────────────────────────────────────────────── */
+.card {
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-pop);
+  padding: var(--sp-5);
+  transition:
+    transform var(--dur) var(--ease-spring),
+    box-shadow var(--dur) var(--ease-out),
+    background-color var(--dur) var(--ease-out);
+}
+.card.flat { box-shadow: var(--shadow-sm); }
+.card.soft { background: var(--paper-3); box-shadow: none; }
+
+/* ── Section heading ───────────────────────────────────────────────────── */
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  color: var(--pri-text);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+.eyebrow .star { color: var(--acc-text); font-size: 14px; line-height: 1; }
+.section-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: var(--sp-4);
+  border-bottom: 2px solid var(--line-2);
+}
+.section-head h2 {
+  font-family: var(--font-display);
+  font-size: var(--fs-2xl);
+  font-weight: 700;
+  margin-top: 4px;
+  letter-spacing: -.01em;
+}
+.section-head p {
+  margin-top: 6px;
+  font-size: var(--fs-sm);
+  color: var(--ink-2);
+}
+.section-head .source {
+  flex: none;
+  font-size: var(--fs-2xs);
+  font-weight: 700;
+  letter-spacing: .08em;
+  color: var(--ink-3);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* ── Buttons ───────────────────────────────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  border: 1px solid transparent;
+  border-radius: var(--r-pill);
+  background: var(--pri-fill);
+  color: var(--pri-ink);
+  font: 600 var(--fs-sm) / 1.4 var(--font-sans);
+  padding: 8px 15px;
+  white-space: nowrap;
+  user-select: none;
+  box-shadow: var(--shadow-sm);
+  transition:
+    transform var(--dur-fast) var(--ease-spring),
+    background-color var(--dur) var(--ease-out),
+    border-color var(--dur) var(--ease-out),
+    color var(--dur) var(--ease-out),
+    box-shadow var(--dur) var(--ease-out);
+}
+.btn:hover { background: var(--pri-fill-hov); transform: translateY(-1px); }
+.btn:active { transform: translateY(1px); }
+.btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+.btn.acc { background: var(--acc-fill); color: var(--acc-ink); }
+.btn.acc:hover { background: var(--acc-fill-hov); }
+.btn.soft { background: var(--pri-soft); color: var(--pri-text); box-shadow: none; }
+.btn.soft:hover { background: color-mix(in srgb, var(--pri-soft) 72%, var(--pri) 8%); }
+.btn.ghost {
+  background: var(--paper-2);
+  color: var(--ink-2);
+  border-color: var(--line);
+  box-shadow: none;
+}
+.btn.ghost:hover { color: var(--pri-text); border-color: var(--line-2); }
+.icon-btn {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  display: inline-grid;
+  place-items: center;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line);
+  background: var(--paper-2);
+  color: var(--ink-2);
+  font-size: var(--fs-md);
+  transition:
+    transform var(--dur-fast) var(--ease-spring),
+    background-color var(--dur) var(--ease-out),
+    color var(--dur) var(--ease-out);
+}
+.icon-btn:hover { color: var(--pri-text); border-color: color-mix(in srgb, var(--pri) 40%, transparent); transform: translateY(-1px); }
+.icon-btn:active { transform: scale(.94); }
+
+/* ── Chips + badges ────────────────────────────────────────────────────── */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 12px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line);
+  background: var(--paper-2);
+  color: var(--ink-2);
+  font: 600 var(--fs-xs) / 1.4 var(--font-sans);
+  white-space: nowrap;
+}
+.chip.on { background: var(--pri-soft); color: var(--pri-text); border-color: color-mix(in srgb, var(--pri) 40%, transparent); }
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 11px;
+  border-radius: var(--r-pill);
+  font: 600 var(--fs-xs) / 1 var(--font-sans);
+  white-space: nowrap;
+  background: var(--paper-3);
+  color: var(--ink-2);
+}
+.badge.sm { padding: 4px 8px; font-size: var(--fs-2xs); }
+.badge.pri { background: var(--pri-soft); color: var(--pri-text); }
+.badge.acc { background: var(--acc-soft); color: var(--acc-text); }
+.badge.ok   { background: hsl(150 70% 92%); color: hsl(150 60% 32%); }
+.badge.info { background: hsl(212 90% 94%); color: hsl(212 70% 42%); }
+.badge.warn { background: hsl(38 95% 92%);  color: hsl(32 80% 38%); }
+[data-theme='dark'] .badge.ok   { background: hsl(150 50% 22%); color: hsl(150 60% 74%); }
+[data-theme='dark'] .badge.info { background: hsl(212 60% 24%); color: hsl(212 80% 78%); }
+[data-theme='dark'] .badge.warn { background: hsl(36 60% 24%);  color: hsl(36 90% 74%); }
+.live {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 11px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line);
+  background: var(--paper-2);
+  color: var(--ink-2);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.live .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: hsl(150 60% 42%);
+  box-shadow: 0 0 0 3px hsl(150 70% 92% / .7);
+  flex: none;
+}
+
+/* ── Progress + monogram ───────────────────────────────────────────────── */
+.progress {
+  height: 12px;
+  border-radius: var(--r-pill);
+  background: var(--paper-3);
+  overflow: hidden;
+  border: 1px solid var(--line);
+}
+.progress > i {
+  display: block;
+  height: 100%;
+  border-radius: var(--r-pill);
+  background: var(--pri-fill);
+  transition: width 1s var(--ease-out), background-color var(--dur) var(--ease-out);
+}
+.mono-mark {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--r-md);
+  background: var(--pri-fill);
+  color: var(--on-fill);
+  font: 700 var(--fs-lg) / 1 var(--font-display);
+  box-shadow: 0 3px 10px hsl(var(--hue-pri) 60% 78% / .5);
+}
+.mono-mark.acc  { background: var(--acc-fill); color: var(--on-acc-fill); box-shadow: 0 3px 10px hsl(var(--hue-acc) 70% 82% / .5); }
+.mono-mark.sec  { background: hsl(var(--hue-sec) 55% 82%); color: var(--on-sec-fill); box-shadow: 0 3px 10px hsl(var(--hue-sec) 55% 78% / .5); }
+.mono-mark.ink  { background: var(--ink); color: var(--paper); box-shadow: var(--shadow-sm); }
+
+/* ── Running label strip ───────────────────────────────────────────────── */
+.strip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  background: var(--paper-3);
+  color: var(--ink-3);
+  font-size: var(--fs-2xs);
+  font-weight: 700;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.strip .star { color: var(--acc-text); }
+
+@media (prefers-reduced-motion: reduce) {
+  .card, .btn, .icon-btn, .progress > i { transition-duration: .001ms; }
+}

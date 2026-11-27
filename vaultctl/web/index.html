@@ -1,11 +1,28 @@
 <!doctype html>
-<html lang="en">
+<html lang="th" data-palette="mochi" data-theme="light">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#9dd2f7" />
+    <meta name="theme-color" content="#FFFDF8" />
     <title>vaultctl web</title>
+    <script>
+      /* Resolve mochi palette + mode before first paint (keys: mochi.palette / mochi.theme). */
+      (function () {
+        var palettes = ['mochi', 'matcha', 'soda', 'sakura'];
+        try {
+          var p = localStorage.getItem('mochi.palette') || 'mochi';
+          var t = localStorage.getItem('mochi.theme') || 'auto';
+          var dark = t === 'dark' || (t === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          var root = document.documentElement;
+          root.setAttribute('data-palette', palettes.indexOf(p) >= 0 ? p : 'mochi');
+          root.setAttribute('data-theme', dark ? 'dark' : 'light');
+          root.style.colorScheme = dark ? 'dark' : 'light';
+          var meta = document.querySelector('meta[name="theme-color"]');
+          if (meta) meta.setAttribute('content', dark ? '#17131F' : '#FFFDF8');
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="app"></div>

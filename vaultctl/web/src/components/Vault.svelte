@@ -101,21 +101,24 @@
 </script>
 
 <div class="vault-wrap">
+  <div class="page-heading">
+    <div class="heading-copy">
+      <div class="eyebrow"><span class="eyebrow-mark">✳</span> PRIVATE CREDENTIALS / LOCAL VAULT</div>
+      <div class="title-line"><h1>Keys to the vault</h1><span class="count-badge">{countText}</span></div>
+    </div>
+  </div>
   <div class="card">
     <div class="vault-head">
-      <div>
-        <div class="title">Entries</div>
-        <div class="sub">{countText}</div>
-      </div>
+      <div class="title">Entries</div>
       <div class="search-wrap">
-        <input class="input" type="text" placeholder="search entries…" bind:value={search} autocomplete="off" />
+        <input class="input" type="text" placeholder="search entries…" bind:value={search} autocomplete="off" aria-label="Search entries" />
       </div>
       <button class="btn cta sm" onclick={() => (showAdd = true)}>＋ Add entry</button>
     </div>
 
     {#if entries.length === 0 || (search && filtered.length === 0)}
       <div class="empty-state">
-        <div class="ico">🔐</div>
+        <div class="ico">✳</div>
         <p>
           {#if entries.length === 0}
             No entries yet. Click "Add entry" to create your first one.
@@ -125,22 +128,20 @@
         </p>
       </div>
     {:else}
-      <div class="entries">
+      <div class="list">
+        <div class="list-head"><span>ENTRY / KEY</span><span>SECRET VALUE</span><span>ACTIONS</span></div>
         {#each filtered as name, i (name)}
           {@const isRev = revealed.has(name)}
-          <div class="entry" style="animation-delay:{i * 40}ms">
-            <div class="entry-top">
-              <div class="entry-key">{name}</div>
+          <div class="row" style="animation-delay:{i * 40}ms">
+            <div class="cell">
+              <span class="key-mark" aria-hidden="true">K</span>
+              <div class="key-copy"><div class="name">{name}</div><div class="entry-meta">SECRET <span>·</span> ENCRYPTED</div></div>
             </div>
-            <div style="display:flex; gap:14px; align-items:center; justify-content:space-between; grid-column: 1 / -1;">
-              <div class="entry-val" class:revealed={isRev}>{isRev ? (values[name] ?? '') : '••••••••'}</div>
-              <div class="entry-actions">
-                <button class="icon-btn" title={isRev ? 'hide' : 'reveal'} onclick={() => reveal(name)}>
-                  {isRev ? '🙈' : '👁'}
-                </button>
-                <button class="icon-btn" title="copy" disabled={!isRev} onclick={() => copy(name)}>⧉</button>
-                <button class="icon-btn danger" title="delete" onclick={() => remove(name)}>✕</button>
-              </div>
+            <div class="value-cell"><div class="value {isRev ? 'show' : ''}">{isRev ? (values[name] ?? '') : '••••••••'}</div></div>
+            <div class="actions">
+              <button class="icon" title={isRev ? 'hide' : 'reveal'} aria-label={isRev ? 'Hide secret' : 'Reveal secret'} onclick={() => reveal(name)}>{isRev ? '◉' : '◎'}</button>
+              <button class="icon" title="copy" aria-label="Copy secret" disabled={!isRev} onclick={() => copy(name)}>⧉</button>
+              <button class="icon danger" title="delete" aria-label="Delete entry" onclick={() => remove(name)}>×</button>
             </div>
           </div>
         {/each}
@@ -151,24 +152,24 @@
 
 {#if showAdd}
   <div class="modal">
-    <div class="modal-backdrop" onclick={() => (showAdd = false)}></div>
-    <div class="modal-card card">
+    <div class="modal-backdrop" role="button" tabindex="0" aria-label="Close dialog" onclick={() => (showAdd = false)} onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') showAdd = false; }}></div>
+    <div class="modal-card">
       <div class="vault-head">
         <div class="title">Add / update entry</div>
-        <button class="icon-btn" onclick={() => (showAdd = false)}>✕</button>
+        <button class="icon" aria-label="Close dialog" onclick={() => (showAdd = false)}>✕</button>
       </div>
-      <div style="padding:22px">
+      <div class="body">
         <div class="field">
-          <label>Name</label>
-          <input class="input mono" bind:value={newName} placeholder="e.g. github_api_key" />
+          <label for="vaultNewName">Name</label>
+          <input id="vaultNewName" class="input mono" bind:value={newName} placeholder="e.g. github_api_key" />
         </div>
         <div class="field">
-          <label>Value</label>
-          <input type="password" class="input mono" bind:value={newValue} placeholder="secret value" />
+          <label for="vaultNewValue">Value</label>
+          <input id="vaultNewValue" type="password" class="input mono" bind:value={newValue} placeholder="secret value" />
         </div>
-        <div style="display:flex; gap:10px; margin-top:20px">
-          <button class="btn cta" style="flex:1" onclick={save}>Save entry</button>
-          <button class="btn ghost" style="flex:1" onclick={() => (showAdd = false)}>Cancel</button>
+        <div class="actions">
+          <button class="btn cta" onclick={save}>Save entry</button>
+          <button class="btn ghost" onclick={() => (showAdd = false)}>Cancel</button>
         </div>
       </div>
     </div>
@@ -176,9 +177,8 @@
 {/if}
 
 {#if toastMsg}
-  <div class="toast" class:show={toastMsg} class:err={toastKind === 'err'} class:ok={toastKind === 'ok'}>
-    {#if toastKind === 'err'}✕{/if}
-    {#if toastKind === 'ok'}✓{/if}
+  <div class="toast show" class:err={toastKind === 'err'} class:ok={toastKind === 'ok'} role="status">
+    <span aria-hidden="true">{toastKind === 'err' ? '✕' : toastKind === 'ok' ? '✓' : 'ℹ'}</span>
     {toastMsg}
   </div>
 {/if}
